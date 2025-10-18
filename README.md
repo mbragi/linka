@@ -1,4 +1,4 @@
-# Linka — Discover Vendors, Chat, and Payments Powered By Base
+# Linka — Discover Vendors, Chat, and Pay With Convience
 **Linka** is a conversational onchain marketplace connecting chat to e-commerce via WhatsApp, Web, and Farcaster.
 
 ---
