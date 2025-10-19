@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: linka-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: linka
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - linka-network
+
+  # Redis Cache
+  redis:
+    image: redis:7.2-alpine
+    container_name: linka-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - linka-network
+
+  # Ollama AI Service
+  ollama:
+    image: ollama/ollama:latest
+    container_name: linka-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - linka-network
+
+  # Bread Proxy Service
+  bread-proxy:
+    build:
+      context: ./services/bread-proxy
+      dockerfile: Dockerfile
+    container_name: linka-bread-proxy
+    ports:
+      - "8080:8080"
+    environment:
+      - BREAD_API_KEY=${BREAD_API_KEY}
+      - MCP_SERVER_URL=${BREAD_MCP_SERVER_URL}
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - linka-network
+
+  # Linka Core Service (Rust)
+  linka-core:
+    build:
+      context: ./linka-core
+      dockerfile: Dockerfile
+    container_name: linka-core
+    ports:
+      - "8081:8081"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/linka
+      - REDIS_URL=redis://redis:6379
+      - BREAD_PROXY_URL=http://bread-proxy:8080
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - mongodb
+      - redis
+      - bread-proxy
+      - ollama
+    networks:
+      - linka-network
+
+  # Linka Adapter Service (TypeScript)
+  linka-adapter:
+    build:
+      context: ./linka-adapter
+      dockerfile: Dockerfile
+    container_name: linka-adapter
+    ports:
+      - "3001:3001"
+    environment:
+      - CORE_SERVICE_URL=http://linka-core:8081
+      - WASENDER_API_KEY=${WASENDER_API_KEY}
+      - WIT_AI_ACCESS_TOKEN=${WIT_AI_ACCESS_TOKEN}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    depends_on:
+      - linka-core
+    networks:
+      - linka-network
+
+  # Web Interface (Optional)
+  linka-web:
+    build:
+      context: ./linka-web
+      dockerfile: Dockerfile
+    container_name: linka-web
+    ports:
+      - "3000:3000"
+    environment:
+      - ADAPTER_URL=http://linka-adapter:3001
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    depends_on:
+      - linka-adapter
+    networks:
+      - linka-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+  ollama_data:
+
+networks:
+  linka-network:
+    driver: bridge

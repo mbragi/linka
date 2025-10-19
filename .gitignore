@@ -1,0 +1,38 @@
+# Ignore .env files and system artifacts
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+build/
+.target/
+target/
+.DS_Store
+.idea/
+.vscode/
+*.log
+npm-debug.log*
+yarn-error.log*
+coverage/
+cursor_history/
+*.sqlite
+
+# Ignore channel-specific cache
+/.cache/
+.cache/
+
+# Ignore test snapshots and user data
+__snapshots__/
+test-output/
+tmp/
+temp/
+*.swp
+
+# Ignore agent working data
+.cursor/
+!.cursor/rules/
+!.cursor/AGENTS.md
+
+# Ignore Docker build output
+docker-compose.override.yml
+

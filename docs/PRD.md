@@ -1,59 +1,102 @@
-# Linka: The Conversational Onchain Marketplace
+# PRD.md
+
+## Product Title
+
+**Linka: The Conversational Onchain Marketplace**
+
 ## Overview
-Linka connects conversations to commerce. Users discover vendors, chat naturally, and pay with a custodial wallet — across WhatsApp, Web, and Farcaster.
+
+Linka is a multi-channel, conversational interface that enables users to discover vendors, initiate chat, and perform transactions with embedded onchain capabilities. Accessible via WhatsApp (WaSender API), Web, and Farcaster, Linka maintains context-rich, fluid NLU-based interactions while supporting fiat and crypto onboarding, vendor management, and secure custodial wallet experiences.
 
 ---
 
-## 📋 User Onboarding & Data Collection
+## Core Capabilities
 
-### Pre-Onboarding Requirements
-Before wallet creation, Linka implements a comprehensive data collection and consent flow:
-
-- **GDPR Compliance**: Mandatory consent for data collection and storage
-- **Multi-Channel Collection**: Data gathered through chat, web interface, and Farcaster modals
-- **Minimal UI Approach**: Maximum 2 screens to maintain user engagement
-- **Identity Verification**: Collection of ECN names or Base names for unique user identification
-- **Google Integration**: Optional Google account data collection (with explicit consent)
-- **Future-Ready Infrastructure**: Prepared for legal-to-legal transaction compliance
-
-### Communication Channels
-- **Chat-based**: Primary interaction through WhatsApp, Web chat, and Farcaster
-- **Web Interface**: Dedicated onboarding flow with streamlined consent process
-- **Farcaster Integration**: Modal-based consent flow for seamless user experience
+* **Custodial Wallets** for every onboarded user (auto-generated)
+* **NLU-powered chat interface** via Wit.ai and Ollama
+* **Fiat On/Off-Ramp** via Bread.africa (MCP client or fallback API)
+* **Fallback Payment Integration** (Paystack, Flutterwave)
+* **Multi-channel access**: Web, WhatsApp, Farcaster
+* **Vendor Discovery & Search** (indexed + filterable)
+* **Booking & Transaction flow** with contextual routing
+* **Abstraction layer for ramping and payments** to allow swappability
 
 ---
 
-## 🧾 Fiat On-Ramp & Off-Ramp
+## Target Users
 
-Linka integrates Bread.africa via API for fiat on- and off-ramping. After completing data collection and consent, during wallet funding or whenever a wallet top-up is requested, the user will be offered two flows:
-
-- **Embedded Onboarding:** If the user consents, Bread.africa is used to generate a virtual Naira account (or equivalent). Bread handles KYC and wallet linking.
-- **Deferred Top-up:** If the user declines, Linka can still accept fiat funding via Paystack or Flutterwave by linking an external bank card or account.
-
-Bread.africa is accessed through an abstraction layer to ensure swappability. In case of performance, pricing, or reliability issues, the backend can switch providers without breaking the chat UX.
-
-All quote requests and wallet top-ups are kept within the natural conversational flow, with visual UI modals or message cards used only for confirmations.
+* Young professionals using mobile-first platforms
+* Small business vendors in digital-first markets
+* Onchain-curious users in emerging regions (e.g., Nigeria)
 
 ---
 
-## 🔄 Complete User Flow
+## User Personas
 
-### Phase 1: Discovery & Initial Contact
-- User discovers Linka through WhatsApp, Web, or Farcaster
-- Initiates conversation with Linka bot
+* **Amina**, a beauty vendor in Lagos who accepts payments via WhatsApp
+* **Kelvin**, a crypto-savvy user who wants a seamless ramp-to-wallet flow
+* **Ify**, a client who books appointments via chat and prefers Web/Farcaster
 
-### Phase 2: Data Collection & Consent
-- GDPR consent for data collection and storage
-- Google account information collection (optional, with consent)
-- ECN/Base name provision for unique identification
-- Maximum 2-screen consent flow across all platforms
+---
 
-### Phase 3: Wallet Creation & Funding
-- Custodial wallet creation after consent completion
-- Funding via Bread.africa or alternative methods (Paystack/Flutterwave)
-- KYC handling through Bread.africa integration
+## Success Metrics
 
-### Phase 4: Platform Access & Transactions
-- Vendor discovery and chat initiation
-- Seamless payment processing through custodial wallet
-- Future-ready infrastructure for legal-to-legal transactions
+* Wallet activation rate post-onboarding
+* Vendor booking conversion through chat
+* % of transactions processed via onchain infrastructure
+* User retention across channels (Web, WhatsApp, Farcaster)
+
+---
+
+## Constraints
+
+* Regulatory compliance on custodial wallets
+* Bread API must be optionally accessed via MCP
+* All critical payment actions must work conversationally without UI dependency
+
+---
+
+## Key User Journeys
+
+1. **Onboarding**
+   * Channel entry → Consent Flow → Google/Email Identity → Wallet auto-creation
+   * MCP handshake with Bread.africa for KYC/account setup
+   * Fallback to Paystack/Flutterwave if Bread unavailable
+
+2. **Discovery**
+   * Chat: "Find tailors in Lekki" → Vendor listing with embedded action cards
+   * NLU processing via Wit.ai → Intent routing to vendor agent
+   * MongoDB-backed vendor search with filtering
+
+3. **Transaction**
+   * "Book Jane for 3PM" → Confirmation → Quote → Bread/Wallet flow
+   * Calendar agent handles scheduling
+   * Payment agent orchestrates transaction
+
+4. **Funding**
+   * MCP-first Bread integration → If declined → fallback prompt
+   * Conversational funding flow without UI dependency
+   * Multiple provider fallback chain
+
+5. **Off-ramping**
+   * User selects "Withdraw funds" → Bread MCP flow → Confirm → Tx receipt
+   * Custodial wallet integration with Base network
+
+## Technical Requirements
+
+### MCP Integration
+- Primary: Bread.africa MCP client for on/off-ramp
+- Secondary: WaSender MCP client for WhatsApp integration
+- Fallback: REST API calls when MCP unavailable
+
+### Service Architecture
+- **linka-core/**: Rust services (wallet, vendor, calendar, user agents)
+- **linka-adapter/**: TypeScript routing and channel management
+- **services/**: Swappable external service integrations
+- **libs/ramp_core**: MCP client abstraction layer
+
+### Development Environment
+- Docker Compose for local development
+- MongoDB + Redis for data persistence
+- Ollama for conversational AI
+- Environment configuration via `.env.local`

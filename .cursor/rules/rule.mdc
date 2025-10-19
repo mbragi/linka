@@ -1,0 +1,53 @@
+# Linka Project Rules
+
+## 🛠️ Development Style
+
+- Do not generate boilerplate unless asked.
+- Use concise, production-level Rust and TypeScript code.
+- Prefer modular crates and shared services.
+- Do not write full UI component trees unless explicitly requested.
+
+## 🧩 Code Structure
+
+- Rust backends live in `linka-core/`
+- TypeScript adapters live in `linka-adapter/`
+- Agent logic is split by intent class:
+  - `wallet.rs`, `calendar.rs`, `vendor.rs`, etc.
+- All services in `/services/` must be swappable.
+- MCP client usage must be abstracted (`/libs/ramp_core`).
+
+## 🌐 External Service Handling
+
+- Bread.africa should be accessed via MCP if available.
+- Wasender API must not store phone data locally.
+- All third-party integrations go through adapters.
+
+## 💬 Conversational Flow
+
+- UX must be chat-native: messages come first, UI is optional.
+- Chat state is session-bound in memory or Redis.
+- Do not generate rigid decision trees.
+
+## 🧠 NLU Routing
+
+- Wit.ai classifies user messages into intents.
+- Each intent maps to a service agent (e.g. `wallet_fund`, `search_vendor`).
+- Always include fallback support (`unknown`, `clarify`).
+
+## 🧾 Wallet Identity
+
+- Every user must have a custodial wallet.
+- Wallet is created on onboarding (even on WhatsApp).
+- Email is the primary binding key (Google preferred).
+
+## 🚫 Do Not
+
+- Do not use the term "ZapGenie" or "Conlink."
+- Do not generate UIs that depend on modals.
+- Do not bind data structures to UI state.
+
+## ✅ Always
+
+- Prefer Rust for logic-heavy code.
+- Use Docker & `.env.local` for reproducibility.
+- Keep flows testable without UI.
