@@ -1,58 +1,14 @@
-# Linka
-
-A conversational onchain marketplace that enables vendor discovery, chat, and payments through natural language interfaces across WhatsApp, Web, and Farcaster channels.
-
-## Overview
-
-Linka provides a channel-agnostic conversational commerce platform built on Base blockchain. Users can discover vendors, initiate bookings, and complete transactions entirely through chat interfaces, with automatic custodial wallet provisioning and fiat on/off-ramp capabilities.
-
-## Key Features
-
-- **Multi-channel Support**: WhatsApp (WaSender API), Web chat, Farcaster
-- **Conversational Commerce**: Complete transaction flows through natural language
-- **Custodial Wallets**: Auto-generated Base wallets for all users
-- **Fiat Integration**: Bread.africa on/off-ramp with Paystack/Flutterwave fallbacks
-- **NLU Processing**: Wit.ai integration for intent classification
-- **Vendor Discovery**: Searchable vendor listings with booking capabilities
+# Linka — Discover Vendors, Chat, and Pay With Convience
+**Linka** is a conversational onchain marketplace connecting chat to e-commerce via WhatsApp, Web, and Farcaster.
 
 ---
 
-## 🚀 Quick Start
+## 📋 Onboarding & Data Collection
 
-1. **Choose your channel**: WhatsApp, Web, or Farcaster
-2. **Complete onboarding**: Email verification + automatic wallet creation
-3. **Fund your wallet**: Via Bread.africa or card payments
-4. **Start chatting**: "Find tailors in Lekki" → discover → book → pay
+Linka implements a comprehensive pre-onboarding flow with GDPR-compliant data collection, ECN/Base name verification, and optional Google integration. The process maintains a minimal 2-screen approach across all platforms while ensuring future-ready infrastructure for legal-to-legal transactions.
 
 ---
 
-## 📚 Documentation
+## 🔁 Wallet Funding & Ramp
 
-- **[Pitch Deck](docs/PITCH.md)** - Project overview and value proposition
-- **[Product Requirements](docs/PRD.md)** - Complete product specification
-- **[Architecture](docs/ARCHITECTURE.md)** - Technical system design
-- **[Brand Guidelines](docs/BRAND.md)** - Visual identity and tone
-- **[Onboarding Flow](docs/ONBOARDING.md)** - User journey details
-
----
-
-## 🛠 Technical Stack
-
-- **Frontend**: TypeScript/Node.js adapter layer
-- **Backend**: Rust services for wallet, vendor, and user management
-- **Blockchain**: Base network with custodial wallet infrastructure
-- **AI**: Wit.ai for NLU, Ollama for conversational AI
-- **Payments**: Bread.africa (MCP-first), Paystack/Flutterwave fallbacks
-- **Database**: MongoDB for vendor listings and user data
-
----
-
-*Linka — Conversations that close onchain.*
-
----
-
-## ⚡️ Powered by Base
-
-Linka leverages [Base](https://base.org) as its primary onchain infrastructure, providing affordable and scalable transactions. Making onchain activity accessible to users regardless of prior crypto experience. However, while wallets and payments use Base, not all external flows (e.g., fiat on/off-ramp, vendor API integrations) are fully onchain.
-
----
+After completing data collection and consent, users can fund their wallets via Bread.africa or opt into Paystack/Flutterwave for card-based deposits. Linka handles the full flow through chat, preserving a seamless conversational experience.

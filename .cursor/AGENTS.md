@@ -1,67 +1,52 @@
-# Linka Agents Architecture
 
-## Core Agent Services
+## Core Agents
 
-### Wallet Agent (`wallet.rs`)
-- **Purpose**: Custodial wallet management and funding operations
-- **Intents**: `wallet_fund`, `wallet_balance`, `wallet_withdraw`, `wallet_create`
-- **Dependencies**: `wallet_core`, `ramp_core` (Bread integration)
-- **MCP Integration**: Bread.africa client for on/off-ramp operations
+### 1. `nlu_dispatcher`
 
-### Vendor Agent (`vendor.rs`)
-- **Purpose**: Vendor discovery, search, and booking management
-- **Intents**: `search_vendor`, `book_vendor`, `vendor_details`, `vendor_list`
-- **Dependencies**: `db_core` (MongoDB), `messaging_core`
-- **External APIs**: Vendor directory services
+* **Purpose**: Receives user message → calls Wit.ai → routes to correct sub-agent.
+* **Tech**: TypeScript (Adapter)
+* **Trigger**: All user messages
 
-### Calendar Agent (`calendar.rs`)
-- **Purpose**: Appointment scheduling and time management
-- **Intents**: `schedule_appointment`, `check_availability`, `reschedule`, `cancel_booking`
-- **Dependencies**: `db_core`, `messaging_core`
-- **Integration**: Vendor availability systems
+### 2. `wallet_manager`
 
-### User Agent (`user.rs`)
-- **Purpose**: User identity, onboarding, and session management
-- **Intents**: `user_onboard`, `user_profile`, `user_preferences`, `user_sync`
-- **Dependencies**: `db_core`, `wallet_core`
-- **External**: Google OAuth, email verification
+* **Purpose**: Creates and manages custodial wallets, handles crypto transfers
+* **Tech**: Rust (wallet_core)
+* **Trigger**: `wallet_create`, `wallet_balance`, `wallet_send`, `wallet_fund`
 
-### Payment Agent (`payment.rs`)
-- **Purpose**: Transaction processing and payment orchestration
-- **Intents**: `process_payment`, `payment_status`, `refund_request`, `payment_history`
-- **Dependencies**: `wallet_core`, `ramp_core`
-- **Fallbacks**: Paystack, Flutterwave integration
+### 3. `vendor_search`
 
-## Intent Classification Flow
+* **Purpose**: Search and list vendors based on category/location.
+* **Tech**: Rust
+* **Trigger**: `search_vendor`
 
-1. **Wit.ai Processing**: Raw message → intent classification
-2. **Intent Routing**: Intent → specific agent service
-3. **Agent Execution**: Agent processes request with dependencies
-4. **Response Generation**: Agent → conversational response
-5. **Fallback Handling**: Unknown intents → clarification prompts
+### 4. `booking_agent`
 
-## MCP Integration Points
+* **Purpose**: Handles vendor bookings, time confirmation, and context binding
+* **Tech**: Rust
+* **Trigger**: `create_booking`, `list_slots`
 
-### Bread.africa MCP Client
-- **Location**: `/libs/ramp_core/src/bread_mcp.rs`
-- **Operations**: `create_account`, `get_quote`, `fund_wallet`, `withdraw_funds`
-- **Fallback**: REST API calls if MCP unavailable
+### 5. `ramp_handler`
 
-### WaSender MCP Client
-- **Location**: `/libs/messaging_core/src/wasender_mcp.rs`
-- **Operations**: `send_message`, `receive_webhook`, `get_chat_status`
-- **Privacy**: No local phone number storage
+* **Purpose**: Interfaces with Bread MCP or fallback REST API to handle fiat top-up/off-ramp
+* **Tech**: Rust (`ramp_core`), uses service abstraction
+* **Trigger**: `wallet_fund`, `wallet_withdraw`
 
-## Service Communication
+### 6. `chat_memory`
 
-- **Adapter → Core**: HTTP/gRPC calls to Rust services
-- **Core → External**: MCP clients for third-party services
-- **Inter-Agent**: Shared message schemas via `messaging_core`
-- **State Management**: Redis for session persistence
+* **Purpose**: Maintains per-session state and caches temporary user info
+* **Tech**: TypeScript + Redis (optional)
+* **Trigger**: All intents needing context continuity
 
-## Error Handling & Fallbacks
+### 7. `system_logger`
 
-- **MCP Unavailable**: Automatic fallback to REST APIs
-- **Agent Failure**: Graceful degradation with user notification
-- **Payment Failure**: Multiple provider fallback chain
-- **Unknown Intent**: Clarification prompts with context
+* **Purpose**: Logs all major actions (wallet creation, booking, funding) for auditability
+* **Tech**: Rust + MongoDB
+* **Trigger**: All major flows
+
+---
+
+> These agents operate either as stateless microservice functions or embedded logic in backend crates. They must be testable independently, mockable in unit tests, and observable through logs and metrics.
+
+---
+
+To contribute new agents or rules, append them to this document and reference the relevant service folder in `/apps/linka/` or `/libs/`.
