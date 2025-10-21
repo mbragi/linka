@@ -1,38 +1,37 @@
-# Ignore .env files and system artifacts
-.env
-.env.*
-!.env.example
 node_modules/
+.next/
+.turbo/
 dist/
 build/
-.target/
 target/
+out/
+DEVELOPMENT.md
+
+.env
+.env.local
+.env*.local
+
 .DS_Store
-.idea/
-.vscode/
 *.log
 npm-debug.log*
+yarn-debug.log*
 yarn-error.log*
-coverage/
-cursor_history/
-*.sqlite
 
-# Ignore channel-specific cache
-/.cache/
-.cache/
-
-# Ignore test snapshots and user data
-__snapshots__/
-test-output/
-tmp/
-temp/
-*.swp
-
-# Ignore agent working data
+.vercel
 .cursor/
-!.cursor/rules/
-!.cursor/AGENTS.md
 
-# Ignore Docker build output
-docker-compose.override.yml
+*.swp
+*.swo
+*~
+
+apps/*/node_modules
+apps/*/.next
+apps/*/dist
+apps/*/.env.local
+
+services/*/target
+services/*/Cargo.lock
+
+libs/*/target
+libs/*/node_modules
 

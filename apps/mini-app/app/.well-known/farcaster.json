@@ -1,0 +1,20 @@
+{
+  "version": "1",
+  "name": "Linka",
+  "subtitle": "Discover, Chat, and Pay with Ease",
+  "description": "Conversations that close onchain. Discover vendors, chat naturally, and pay with ease.",
+  "screenshotUrls": [],
+  "iconUrl": "",
+  "splashImageUrl": "",
+  "splashBackgroundColor": "#F6FBF4",
+  "homeUrl": "https://linka-mini-app.vercel.app",
+  "webhookUrl": "https://linka-mini-app.vercel.app/api/webhook",
+  "primaryCategory": "social",
+  "tags": ["marketplace", "chat", "payments", "base", "onchain"],
+  "heroImageUrl": "",
+  "tagline": "Conversations that close onchain",
+  "ogTitle": "Linka — Discover, Chat, and Pay with Ease",
+  "ogDescription": "Conversations that close onchain. Discover vendors, chat naturally, and pay with ease.",
+  "ogImageUrl": ""
+}
+

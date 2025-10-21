@@ -1,0 +1,23 @@
+{
+  "name": "linka-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "libs/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/mini-app",
+    "dev:mini-app": "npm run dev --workspace=apps/mini-app",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:adapter": "npm run dev --workspace=apps/adapter",
+    "build": "npm run build --workspaces",
+    "build:mini-app": "npm run build --workspace=apps/mini-app",
+    "lint": "npm run lint --workspaces",
+    "clean": "rm -rf node_modules apps/*/node_modules services/*/node_modules libs/*/node_modules"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

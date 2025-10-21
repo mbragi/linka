@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # Frontend Services
+  mini-app:
+    build:
+      context: ./apps/mini-app
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_ROOT_URL=http://localhost:3000
+      - NEXT_PUBLIC_API_URL=http://adapter:3001
+    depends_on:
+      - adapter
+    volumes:
+      - ./apps/mini-app:/app
+      - /app/node_modules
+
+  # Backend Services
+  adapter:
+    build:
+      context: ./apps/adapter
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      - WALLET_SERVICE_URL=http://wallet-core:3002
+      - VENDOR_SERVICE_URL=http://vendor-service:3003
+      - BREAD_PROXY_URL=http://bread-proxy:3004
+      - WIT_AI_TOKEN=${WIT_AI_TOKEN}
+    depends_on:
+      - wallet-core
+      - vendor-service
+      - bread-proxy
+
+  wallet-core:
+    build:
+      context: ./services/wallet-core
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3001"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/linka
+      - PORT=3001
+    depends_on:
+      - mongo
+
+  vendor-service:
+    build:
+      context: ./services/vendor-service
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3002"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/linka
+      - PORT=3002
+    depends_on:
+      - mongo
+
+  bread-proxy:
+    build:
+      context: ./services/bread-proxy
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3003"
+    environment:
+      - BREAD_API_KEY=${BREAD_API_KEY}
+      - BREAD_WEBHOOK_SECRET=${BREAD_WEBHOOK_SECRET}
+      - PORT=3003
+
+  # AI Services
+  ai-agent:
+    build:
+      context: ./apps/ai-agent
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3004"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - WIT_AI_TOKEN=${WIT_AI_TOKEN}
+      - PORT=3004
+
+  # Database
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=linka
+
+  # Redis (for caching)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  default:
+    name: linka-network
