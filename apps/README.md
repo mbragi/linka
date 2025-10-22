@@ -9,23 +9,14 @@ Frontend applications for Linka's multi-channel conversational marketplace.
 - MiniKit compatible with manifest and webhooks
 - Chat-native UI with wallet and vendor discovery
 - Serves as both mini-app and primary web interface
+- **Direct webhook endpoints** for external integrations (WhatsApp, etc.)
 - **Status**: ✅ Complete and ready for deployment
-
-### `adapter/` - Message Routing Adapter
-- TypeScript/Node service for routing chat messages
-- Supports: WhatsApp (WaSender), Web, Farcaster
-- Routes intents via Wit.ai
-- Connects to backend services
-- **Status**: 🚧 To be implemented
 
 ## Development
 
 ```bash
-# Run mini app (universal web app)
+# Run mini app (universal web app with webhooks)
 npm run dev:mini-app
-
-# Run adapter
-npm run dev:adapter
 ```
 
 ## Shared Dependencies

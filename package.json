@@ -10,8 +10,6 @@
   "scripts": {
     "dev": "npm run dev --workspace=apps/mini-app",
     "dev:mini-app": "npm run dev --workspace=apps/mini-app",
-    "dev:web": "npm run dev --workspace=apps/web",
-    "dev:adapter": "npm run dev --workspace=apps/adapter",
     "build": "npm run build --workspaces",
     "build:mini-app": "npm run build --workspace=apps/mini-app",
     "lint": "npm run lint --workspaces",

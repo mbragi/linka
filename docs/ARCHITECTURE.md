@@ -2,69 +2,82 @@
 
 ## System Overview
 
-Linka is a modular, multi-channel conversational marketplace that interfaces users with vendors, payments, and blockchain services via conversational interfaces like WhatsApp, Web chat, and Farcaster. It emphasizes composability, fallback resiliency, and clean interfacing with third-party systems using optional MCP (Message Control Protocol) clients.
+Linka is a conversational marketplace powered by OpenAI and Mini Apps, providing multi-channel AI agents that interface users with vendors, payments, and blockchain services via WhatsApp (WaSender), Web chat, and Farcaster. The system emphasizes composability, fallback resiliency, and seamless blockchain integration.
 
 ---
 
-## Core Services
+## Core Architecture
 
-### 1. Adapter Layer
+### 1. OpenAI-Powered AI Layer
 
-* **TypeScript/Node Service** for routing incoming chat messages
-* Supports: WhatsApp (via WaSender), Web, Farcaster
-* Routes intents via Wit.ai and connects to:
+* **Next.js API Routes** with OpenAI integration
+* **Multi-channel support**: WhatsApp (WaSender), Web, Farcaster
+* **Tool calling** for backend service integration
+* **Mini App sharing** for enhanced user experience
 
-  * Wallet and user service
-  * Vendor Discovery and Listings
-  * Bread Integration (On/Off-Ramp)
+### 2. Conversational AI Agent
 
-### 2. Wallet & User Core (Rust)
+* **OpenAI GPT-4o-mini** for intelligent conversation handling
+* **Multi-step workflows** for onboarding, vendor discovery, payments
+* **Context-aware responses** across all channels
+* **Backend tool integration** for blockchain operations
 
-* Custodial wallet manager
-* Manages identity (email, ECN/Base names, Google auth)
-* Calendar, social actions, reminders
-* Handles generic and task-specific user commands
-* Receives message payloads via adapter
+### 3. API Services (`/api/`)
 
-### 3. Vendor Service (Rust)
-
-* Vendor discovery + listing
-* MongoDB-backed
-* Exposes `/api/vendors/search`
-
-### 4. Shared Crates (`libs/`)
-
-* `ai_core` (Wit.ai, Ollama)
-* `wallet_core` (custodial wallet generation)
-* `messaging_core` (standard schemas)
-* `db_core` (Mongo helper)
+* `/api/agent` - Main OpenAI conversational AI endpoint
+* `/api/vendors` - Vendor discovery and search
+* `/api/webhook/whatsapp` - WaSender webhook integration
+* **Direct webhook endpoints** eliminate need for separate adapter service
 
 ---
 
-## On-Ramp Abstraction
+## Multi-Channel Integration
 
-### Bread.africa
+### WhatsApp (WaSender)
 
-* First-class integration as on-ramp/off-ramp provider
-* Accessed via API or MCP server if available
-* Modular fallback allows switching to Paystack/Flutterwave/others
-* User funding flow:
+* **Webhook endpoint**: `/api/webhook/whatsapp`
+* **WaSender API** for message sending/receiving
+* **Conversational flow** maintained across sessions
+* **Phone number-based** thread management
 
-  1. Ask user to fund wallet
-  2. Show Bread-powered modal or generate account
-  3. If declined, fallback to other flow
+### Web Interface
 
-### Design Contract
+* **Next.js mini-app** with chat interface
+* **Real-time messaging** via OpenAI API
+* **Farcaster MiniKit** integration
+* **Responsive design** for mobile/desktop
 
-All providers must support:
+### Farcaster
 
-* `quote_request`
-* `initiate_topup`
-* `resolve_transaction`
-* Optionally: `create_account`, `KYC_verify`
+* **Native Farcaster actions** via Mini Apps
+* **Cast sending** and community interaction
+* **MiniKit compatibility** for seamless UX
+* **Base blockchain** native integration
 
 ---
 
-## Deployment Note
+## OpenAI Capabilities
 
-Linka is capable of acting as an MCP client when third-party services (e.g., Bread) expose compatible control servers. This allows higher reliability and circuit-breaker style switching.
+### Conversational AI
+
+* **Intent classification** and entity extraction
+* **Multi-step workflows** (onboarding, payments)
+* **Context awareness** across channels
+* **Tool orchestration** for complex tasks
+
+### Backend Tool Integration
+
+* **Vendor search** via `/api/vendors`
+* **Wallet management** and balance checking
+* **Mini App sharing** based on context
+* **Payment processing** workflows
+
+---
+
+## Deployment Architecture
+
+* **Next.js application** with API routes and webhook endpoints
+* **OpenAI integration** for AI and conversation
+* **Direct webhook handling** for WhatsApp and other services
+* **Environment-based** configuration
+* **Simplified architecture** - no separate adapter service needed

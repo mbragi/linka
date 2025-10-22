@@ -12,7 +12,6 @@ Before wallet creation, Linka implements a comprehensive data collection and con
 - **GDPR Compliance**: Mandatory consent for data collection and storage
 - **Multi-Channel Collection**: Data gathered through chat, web interface, and Farcaster modals
 - **Minimal UI Approach**: Maximum 2 screens to maintain user engagement
-- **Identity Verification**: Collection of ECN names or Base names for unique user identification
 - **Google Integration**: Optional Google account data collection (with explicit consent)
 - **Future-Ready Infrastructure**: Prepared for legal-to-legal transaction compliance
 
@@ -45,7 +44,6 @@ All quote requests and wallet top-ups are kept within the natural conversational
 ### Phase 2: Data Collection & Consent
 - GDPR consent for data collection and storage
 - Google account information collection (optional, with consent)
-- ECN/Base name provision for unique identification
 - Maximum 2-screen consent flow across all platforms
 
 ### Phase 3: Wallet Creation & Funding

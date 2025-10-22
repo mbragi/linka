@@ -47,17 +47,42 @@ export default function Home() {
     setInputText('')
     setIsTyping(true)
 
-    // Simulate bot response
-    setTimeout(() => {
+    try {
+      // Call AgentKit API
+      const response = await fetch('/api/agent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: text.trim(),
+          threadId: 'web-user',
+          channel: 'web',
+        }),
+      })
+
+      const data = await response.json()
+
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: 'I understand you want to ' + text.toLowerCase() + '. Let me help you with that!',
+        text: data.response || 'Sorry, I encountered an error. Please try again.',
         sender: 'bot',
         timestamp: new Date()
       }
+      
       setMessages(prev => [...prev, botResponse])
+    } catch (error) {
+      console.error('Error calling AgentKit API:', error)
+      const errorResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: 'Sorry, I\'m having trouble connecting right now. Please try again later.',
+        sender: 'bot',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, errorResponse])
+    } finally {
       setIsTyping(false)
-    }, 1000)
+    }
   }
 
   const handleQuickAction = (action: string) => {

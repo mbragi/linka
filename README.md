@@ -1,6 +1,6 @@
 # Linka — Discover, Chat, and Pay
 
-**Linka** is a conversational onchain marketplace connecting chat to e-commerce via WhatsApp, Web, and Farcaster.
+**Linka** is a conversational marketplace, providing seamless in-conversation experiences across WhatsApp (WaSender), Web, and Farcaster. Users can discover vendors, manage wallets, and make onchain payments through natural conversation.
 
 > **"Conversations that close onchain."**
 
@@ -10,22 +10,8 @@
 
 ```
 linka/
-├── apps/                    # Frontend applications
-│   ├── mini-app/           # ✅ Farcaster mini app (Base integration)
-│   ├── web/                # 🚧 Main web application
-│   └── adapter/            # 🚧 Message routing service
-│
-├── services/               # Backend services (Rust)
-│   ├── wallet-core/        # 🚧 Custodial wallet management
-│   ├── vendor-service/     # 🚧 Vendor discovery & listings
-│   └── bread-proxy/        # 🚧 Fiat on/off-ramp integration
-│
-├── libs/                   # Shared libraries
-│   ├── ai_core/           # 🚧 Rust: Wit.ai, Ollama
-│   ├── wallet_core/       # 🚧 Rust: Wallet generation
-│   ├── messaging_core/    # 🚧 Rust: Message schemas
-│   ├── db_core/           # 🚧 Rust: MongoDB helpers
-│   └── ui-components/     # 🚧 TypeScript: React components
+├── apps/                   # Frontend applications
+│   └── mini-app/          # ✅ OpenAI-powered mini-app with webhooks
 │
 └── docs/                  # Documentation
     ├── ARCHITECTURE.md
@@ -62,13 +48,11 @@ npm run dev:mini-app
 ### Available Commands
 
 ```bash
-npm run dev              # Run mini app (default)
-npm run dev:mini-app     # Run Farcaster mini app
-npm run dev:web          # Run main web app
-npm run dev:adapter      # Run message adapter
-
-npm run build            # Build all workspaces
-npm run lint             # Lint all workspaces
+npm run dev              # Run  mini app
+npm run build            # Build mini app
+npm run start            # Start production server
+npm run lint             # Lint code
+npm run build            # Build AgentKit packages
 npm run clean            # Clean all node_modules
 ```
 
@@ -76,22 +60,23 @@ npm run clean            # Clean all node_modules
 
 ## 📱 Applications
 
-### Mini App (Farcaster/Base)
-The Farcaster mini app is **complete and ready for deployment**:
+### Mini App (OpenAI + Mini Apps)
+The conversational marketplace is **complete and ready for deployment**:
 
-- ✅ Chat-native UI with Linka branding
-- ✅ Wallet funding (Bread.africa + card payments)
-- ✅ Vendor discovery and search
-- ✅ MiniKit integration with manifest
-- ✅ Webhook endpoint for Farcaster events
+- ✅ OpenAI-powered conversational AI
+- ✅ Mini App sharing and preview cards
+- ✅ WhatsApp integration via WaSender webhooks
+- ✅ Farcaster MiniKit integration
+- ✅ Embedded Mini Apps: Vendors, Marketplace, Wallet
+- ✅ Wallet management and token transfers
+- ✅ Multi-channel support (Web, WhatsApp, Farcaster)
+- ✅ Backend tool integration (vendor search, wallet balance)
+- ✅ Direct webhook endpoints for external integrations
 
 **Deploy**: See [apps/mini-app/DEPLOYMENT.md](apps/mini-app/DEPLOYMENT.md)
 
 ### Web App
 Full-featured marketplace with advanced vendor management (coming soon)
-
-### Adapter
-Message routing service for WhatsApp, Web, and Farcaster channels (coming soon)
 
 ---
 
@@ -136,15 +121,14 @@ Message routing service for WhatsApp, Web, and Farcaster channels (coming soon)
 
 ## 🔧 Development
 
-### Workspace Management
-This project uses **npm workspaces** for monorepo management.
-
+### Quick Start
 ```bash
-# Install dependencies for all workspaces
+# Install dependencies
 npm install
 
-# Add a dependency to specific workspace
-npm install <package> --workspace=apps/mini-app
+# Run mini-app locally (OpenAI + Mini Apps + Webhooks)
+npm run dev:mini-app
+```
 
 # Run script in specific workspace
 npm run dev --workspace=apps/mini-app
