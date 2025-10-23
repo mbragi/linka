@@ -38,15 +38,45 @@ function detectMiniAppContext(message: string): string | null {
 }
 
 async function callBackendTool(tool: string, params: any) {
-  // Call backend APIs based on tool type
+  const backendUrl = process.env.BACKEND_SERVICE_URL || 'http://localhost:4000';
+  
   switch (tool) {
     case 'search_vendors':
-      const vendorResponse = await fetch(`${process.env.NEXT_PUBLIC_ROOT_URL}/api/vendors`, {
+      const vendorResponse = await fetch(`${backendUrl}/api/vendors?category=${params.category || ''}&minReputation=${params.minReputation || 0}`);
+      return await vendorResponse.json();
+    
+    case 'create_escrow':
+      const escrowResponse = await fetch(`${backendUrl}/api/escrow/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: params.query })
+        body: JSON.stringify(params)
       });
-      return await vendorResponse.json();
+      return await escrowResponse.json();
+    
+    case 'check_reputation':
+      const reputationResponse = await fetch(`${backendUrl}/api/reputation/${params.userAddress}`);
+      return await reputationResponse.json();
+    
+    case 'release_payment':
+      const releaseResponse = await fetch(`${backendUrl}/api/escrow/${params.escrowId}/release`, {
+        method: 'POST'
+      });
+      return await releaseResponse.json();
+    
+    case 'file_dispute':
+      const disputeResponse = await fetch(`${backendUrl}/api/escrow/${params.escrowId}/dispute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reason: params.reason,
+          evidence: params.evidence || []
+        })
+      });
+      return await disputeResponse.json();
+    
+    case 'get_transaction_status':
+      const transactionResponse = await fetch(`${backendUrl}/api/transactions/${params.email}/${params.transactionId}`);
+      return await transactionResponse.json();
     
     case 'get_wallet_balance':
       // Mock wallet balance for now
@@ -72,11 +102,18 @@ export async function POST(request: NextRequest) {
 - Make onchain transactions
 
 Available tools:
-- search_vendors: Search for vendors by query
+- search_vendors: Search for vendors by category and reputation
+- create_escrow: Create escrow for marketplace/service transactions
+- check_reputation: Verify seller/buyer reputation before transactions
+- release_payment: Release escrowed payments to sellers
+- file_dispute: File disputes for unresolved transactions
+- get_transaction_status: Check transaction status and timeline
 - get_wallet_balance: Get user's wallet balance
 
 If a user asks about vendors, shopping, or marketplace, you can use the search_vendors tool.
+If a user wants to make a purchase or book a service, you can use create_escrow.
 If a user asks about their wallet or balance, you can use the get_wallet_balance tool.
+If a user wants to check transaction status, use get_transaction_status.
 
 Be helpful, friendly, and focused on marketplace activities.`;
 
@@ -93,16 +130,145 @@ Be helpful, friendly, and focused on marketplace activities.`;
           type: "function",
           function: {
             name: "search_vendors",
-            description: "Search for vendors in the marketplace",
+            description: "Search for vendors in the marketplace by category and minimum reputation",
             parameters: {
               type: "object",
               properties: {
-                query: {
+                category: {
                   type: "string",
-                  description: "Search query for vendors"
+                  description: "The category to search for (electronics, clothing, food, services, etc.)"
+                },
+                minReputation: {
+                  type: "number",
+                  description: "Minimum reputation score (0-1000)"
+                }
+              }
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "create_escrow",
+            description: "Create escrow for marketplace purchase or service booking",
+            parameters: {
+              type: "object",
+              properties: {
+                seller: {
+                  type: "string",
+                  description: "The seller's wallet address"
+                },
+                amount: {
+                  type: "string",
+                  description: "The amount in ETH (e.g., '0.1')"
+                },
+                tokenAddress: {
+                  type: "string",
+                  description: "Token address (use '0x0000000000000000000000000000000000000000' for ETH)"
+                },
+                deadline: {
+                  type: "number",
+                  description: "Deadline timestamp in seconds"
+                },
+                buyerEmail: {
+                  type: "string",
+                  description: "The buyer's email address"
+                },
+                sellerEmail: {
+                  type: "string",
+                  description: "The seller's email address"
+                },
+                metadata: {
+                  type: "object",
+                  description: "Transaction metadata including title, description, and milestones"
+                },
+                conversationContext: {
+                  type: "object",
+                  description: "Conversation context including channel and message history"
                 }
               },
-              required: ["query"]
+              required: ["seller", "amount", "tokenAddress", "deadline", "buyerEmail", "sellerEmail", "metadata", "conversationContext"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "check_reputation",
+            description: "Check seller/buyer reputation before transaction",
+            parameters: {
+              type: "object",
+              properties: {
+                userAddress: {
+                  type: "string",
+                  description: "The user's wallet address"
+                }
+              },
+              required: ["userAddress"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "release_payment",
+            description: "Release escrowed payment to seller",
+            parameters: {
+              type: "object",
+              properties: {
+                escrowId: {
+                  type: "string",
+                  description: "The escrow ID"
+                }
+              },
+              required: ["escrowId"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "file_dispute",
+            description: "File dispute for unresolved transaction",
+            parameters: {
+              type: "object",
+              properties: {
+                escrowId: {
+                  type: "string",
+                  description: "The escrow ID"
+                },
+                reason: {
+                  type: "string",
+                  description: "The reason for the dispute"
+                },
+                evidence: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Evidence files or descriptions"
+                }
+              },
+              required: ["escrowId", "reason"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_transaction_status",
+            description: "Get transaction status and timeline",
+            parameters: {
+              type: "object",
+              properties: {
+                email: {
+                  type: "string",
+                  description: "The user's email address"
+                },
+                transactionId: {
+                  type: "string",
+                  description: "The transaction ID"
+                }
+              },
+              required: ["email", "transactionId"]
             }
           }
         },
