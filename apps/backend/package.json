@@ -22,7 +22,7 @@
     "express-rate-limit": "^7.1.5",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "nodemailer": "^6.9.7",
+    "nodemailer": "^7.0.7",
     "ethers": "^6.10.0",
     "redis": "^4.6.10",
     "bull": "^4.12.0"
