@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { MessageCircle, Wallet, Search, ShoppingBag, ArrowRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Wallet, Search, ShoppingBag, ArrowRight, ChevronRight } from 'lucide-react'
 import WalletFund from '../components/WalletFund'
 import VendorDiscovery from '../components/VendorDiscovery'
+import OnboardingModal from '../components/OnboardingModal'
 
 interface Message {
   id: string
@@ -12,15 +13,54 @@ interface Message {
   timestamp: Date
 }
 
+interface User {
+  email: string
+  name: string
+  walletAddress: string
+  onboardingCompleted: boolean
+}
+
 export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Welcome to Linka! I\'m here to help you discover vendors, chat naturally, and pay onchain. What would you like to do today?',
-      sender: 'bot',
-      timestamp: new Date()
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [isCheckingUser, setIsCheckingUser] = useState(true)
+
+  useEffect(() => {
+    checkUserSession()
+  }, [])
+
+  useEffect(() => {
+    if (user && !isInitialized) {
+      setMessages([
+        {
+          id: '1',
+          text: `Welcome back, ${user.name}! I'm here to help you discover vendors, chat naturally, and pay onchain. What would you like to do today?`,
+          sender: 'bot',
+          timestamp: new Date()
+        }
+      ])
+      setIsInitialized(true)
     }
-  ])
+  }, [user, isInitialized])
+
+  const checkUserSession = async () => {
+    try {
+      const storedUser = localStorage.getItem('linka_user')
+      if (storedUser) {
+        const userData = JSON.parse(storedUser)
+        setUser(userData)
+        setIsCheckingUser(false)
+        return
+      }
+    } catch (error) {
+      console.error('Error checking user session:', error)
+    }
+    
+    setIsCheckingUser(false)
+    setShowOnboarding(true)
+  }
   const [inputText, setInputText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [showWalletFund, setShowWalletFund] = useState(false)
@@ -29,12 +69,31 @@ export default function Home() {
   const quickActions = [
     { icon: Search, label: 'Find Vendors', action: 'search' },
     { icon: Wallet, label: 'Fund Wallet', action: 'fund' },
-    { icon: ShoppingBag, label: 'Browse Marketplace', action: 'browse' },
-    { icon: MessageCircle, label: 'Start Chat', action: 'chat' }
+    { icon: ShoppingBag, label: 'Browse Marketplace', action: 'browse' }
   ]
 
+  const handleOnboardingComplete = (userData: any) => {
+    setUser({
+      email: userData.email,
+      name: userData.name,
+      walletAddress: userData.walletAddress,
+      onboardingCompleted: true
+    })
+    setShowOnboarding(false)
+  }
+
+  const handleSignIn = (email: string) => {
+    setUser({
+      email,
+      name: 'User', // Will be updated from API response
+      walletAddress: '',
+      onboardingCompleted: true
+    })
+    setShowOnboarding(false)
+  }
+
   const handleSendMessage = async (text: string) => {
-    if (!text.trim()) return
+    if (!text.trim() || !user) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -48,7 +107,7 @@ export default function Home() {
     setIsTyping(true)
 
     try {
-      // Call AgentKit API
+      // Call AgentKit API with user context
       const response = await fetch('/api/agent', {
         method: 'POST',
         headers: {
@@ -58,6 +117,7 @@ export default function Home() {
           message: text.trim(),
           threadId: 'web-user',
           channel: 'web',
+          userEmail: user.email
         }),
       })
 
@@ -99,10 +159,29 @@ export default function Home() {
     const actionTexts = {
       search: 'I want to find vendors',
       fund: 'I want to fund my wallet',
-      browse: 'Show me the marketplace',
-      chat: 'I want to start chatting'
+      browse: 'Show me the marketplace'
     }
     handleSendMessage(actionTexts[action as keyof typeof actionTexts])
+  }
+
+  if (isCheckingUser) {
+    return (
+      <div className="min-h-screen bg-linka-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-linka-emerald border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (showOnboarding) {
+    return (
+      <OnboardingModal 
+        onComplete={handleOnboardingComplete}
+        onSignIn={handleSignIn}
+      />
+    )
   }
 
   return (
@@ -111,11 +190,15 @@ export default function Home() {
       <div className="bg-linka-black text-linka-white p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-linka-emerald rounded-lg flex items-center justify-center">
-            <MessageCircle className="w-5 h-5 text-white" />
+            <Wallet className="w-5 h-5 text-white" />
           </div>
           <div>
             <h1 className="text-lg font-semibold">Linka</h1>
-            <p className="text-sm text-linka-blue">Conversations that close onchain</p>
+            <div className="flex items-center space-x-1 text-sm text-linka-blue">
+              <span>Home</span>
+              <ChevronRight className="w-3 h-3" />
+              <span>Chat</span>
+            </div>
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -126,7 +209,7 @@ export default function Home() {
 
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
+        {messages.length > 0 && messages.map((message) => (
           <div
             key={message.id}
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -142,7 +225,7 @@ export default function Home() {
               <p className={`text-xs mt-1 ${
                 message.sender === 'user' ? 'text-green-100' : 'text-gray-500'
               }`}>
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {message.timestamp.getHours().toString().padStart(2, '0')}:{message.timestamp.getMinutes().toString().padStart(2, '0')}
               </p>
             </div>
           </div>
@@ -163,7 +246,7 @@ export default function Home() {
 
       {/* Quick Actions */}
       <div className="p-4 border-t border-linka-blue">
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-3 gap-3 mb-4">
           {quickActions.map((action, index) => (
             <button
               key={index}

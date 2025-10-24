@@ -4,6 +4,13 @@ export interface IUser extends Document {
   email: string;
   farcasterFid?: number;
   walletAddress: string;
+  encryptedPrivateKey: string;
+  phoneNumber?: string;
+  googleId?: string;
+  consentGiven: boolean;
+  onboardingCompleted: boolean;
+  baseName?: string;
+  ensName?: string;
   profile: {
     name: string;
     bio?: string;
@@ -56,6 +63,39 @@ const UserSchema = new Schema<IUser>({
     required: true,
     unique: true,
     lowercase: true,
+    index: true
+  },
+  encryptedPrivateKey: {
+    type: String,
+    required: true
+  },
+  phoneNumber: {
+    type: String,
+    sparse: true,
+    index: true
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
+  consentGiven: {
+    type: Boolean,
+    default: false
+  },
+  onboardingCompleted: {
+    type: Boolean,
+    default: false
+  },
+  baseName: {
+    type: String,
+    sparse: true,
+    index: true
+  },
+  ensName: {
+    type: String,
+    sparse: true,
     index: true
   },
   profile: {

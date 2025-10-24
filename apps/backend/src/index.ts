@@ -16,6 +16,7 @@ import { DisputeService } from './services/DisputeService';
 
 // Import routes
 import identityRoutes from './routes/identity';
+import vendorRoutes from './routes/vendors';
 import escrowRoutes, { initializeEscrowRoutes } from './routes/escrow';
 import transactionRoutes, { initializeTransactionRoutes } from './routes/transactions';
 import reputationRoutes, { initializeReputationRoutes } from './routes/reputation';
@@ -72,6 +73,7 @@ initializeReputationRoutes(reputationService);
 
 // API Routes
 app.use('/api/identity', identityRoutes);
+app.use('/api/vendors', vendorRoutes);
 app.use('/api/escrow', escrowRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/reputation', reputationRoutes);

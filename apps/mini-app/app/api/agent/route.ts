@@ -37,7 +37,7 @@ function detectMiniAppContext(message: string): string | null {
   return null;
 }
 
-async function callBackendTool(tool: string, params: any) {
+async function callBackendTool(tool: string, params: any, userEmail?: string) {
   const backendUrl = process.env.BACKEND_SERVICE_URL || 'http://localhost:4000';
   
   switch (tool) {
@@ -45,11 +45,32 @@ async function callBackendTool(tool: string, params: any) {
       const vendorResponse = await fetch(`${backendUrl}/api/vendors?category=${params.category || ''}&minReputation=${params.minReputation || 0}`);
       return await vendorResponse.json();
     
+    case 'create_vendor':
+      const createVendorResponse = await fetch(`${backendUrl}/api/vendors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userEmail || 'temp@example.com',
+          profile: {
+            name: params.name,
+            bio: params.bio,
+            categories: params.categories || [],
+            location: params.location,
+            website: params.website
+          },
+          consentGiven: true
+        })
+      });
+      return await createVendorResponse.json();
+    
     case 'create_escrow':
       const escrowResponse = await fetch(`${backendUrl}/api/escrow/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params)
+        body: JSON.stringify({
+          ...params,
+          buyerEmail: userEmail || params.buyerEmail
+        })
       });
       return await escrowResponse.json();
     
@@ -75,10 +96,14 @@ async function callBackendTool(tool: string, params: any) {
       return await disputeResponse.json();
     
     case 'get_transaction_status':
-      const transactionResponse = await fetch(`${backendUrl}/api/transactions/${params.email}/${params.transactionId}`);
+      const transactionResponse = await fetch(`${backendUrl}/api/transactions/${userEmail || params.email}/${params.transactionId}`);
       return await transactionResponse.json();
     
     case 'get_wallet_balance':
+      if (userEmail) {
+        const balanceResponse = await fetch(`${backendUrl}/api/identity/${userEmail}/wallet/balance`);
+        return await balanceResponse.json();
+      }
       // Mock wallet balance for now
       return { balance: '0.5 ETH', address: '0x123...' };
     
@@ -89,7 +114,7 @@ async function callBackendTool(tool: string, params: any) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, senderAddress, conversationId, channel } = await request.json();
+    const { message, senderAddress, conversationId, channel, userEmail } = await request.json();
 
     // Check if we should share a Mini App
     const miniAppKey = detectMiniAppContext(message);
@@ -101,6 +126,8 @@ export async function POST(request: NextRequest) {
 - Browse the marketplace
 - Make onchain transactions
 
+User Context: ${userEmail ? `Current user: ${userEmail}` : 'No user context available'}
+
 Available tools:
 - search_vendors: Search for vendors by category and reputation
 - create_escrow: Create escrow for marketplace/service transactions
@@ -109,11 +136,13 @@ Available tools:
 - file_dispute: File disputes for unresolved transactions
 - get_transaction_status: Check transaction status and timeline
 - get_wallet_balance: Get user's wallet balance
+- create_vendor: Create a new vendor profile
 
 If a user asks about vendors, shopping, or marketplace, you can use the search_vendors tool.
 If a user wants to make a purchase or book a service, you can use create_escrow.
 If a user asks about their wallet or balance, you can use the get_wallet_balance tool.
 If a user wants to check transaction status, use get_transaction_status.
+If a user wants to become a vendor, use create_vendor.
 
 Be helpful, friendly, and focused on marketplace activities.`;
 
@@ -275,6 +304,40 @@ Be helpful, friendly, and focused on marketplace activities.`;
         {
           type: "function",
           function: {
+            name: "create_vendor",
+            description: "Create a new vendor profile",
+            parameters: {
+              type: "object",
+              properties: {
+                name: {
+                  type: "string",
+                  description: "The vendor's business name"
+                },
+                bio: {
+                  type: "string",
+                  description: "Description of the vendor's business"
+                },
+                categories: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Business categories (electronics, clothing, food, services, etc.)"
+                },
+                location: {
+                  type: "string",
+                  description: "Business location"
+                },
+                website: {
+                  type: "string",
+                  description: "Business website URL"
+                }
+              },
+              required: ["name", "bio"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
             name: "get_wallet_balance",
             description: "Get user's wallet balance",
             parameters: {
@@ -297,7 +360,7 @@ Be helpful, friendly, and focused on marketplace activities.`;
       const toolName = toolCall.function.name;
       const toolParams = JSON.parse(toolCall.function.arguments);
       
-      toolResults = await callBackendTool(toolName, toolParams);
+      toolResults = await callBackendTool(toolName, toolParams, userEmail);
       
       // Get follow-up response with tool results
       const followUp = await openai.chat.completions.create({
@@ -305,7 +368,11 @@ Be helpful, friendly, and focused on marketplace activities.`;
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: message },
-          { role: "assistant", content: completion.choices[0].message.content || "" },
+          { 
+            role: "assistant", 
+            content: completion.choices[0].message.content,
+            tool_calls: completion.choices[0].message.tool_calls
+          },
           { role: "tool", content: JSON.stringify(toolResults), tool_call_id: toolCall.id }
         ],
         temperature: 0.7

@@ -1,69 +1,81 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, MapPin, Star, MessageCircle, ArrowRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, MapPin, Star, MessageCircle, ArrowRight, Loader2 } from 'lucide-react'
 
 interface Vendor {
   id: string
+  email: string
+  walletAddress: string
+  profile: {
   name: string
-  category: string
-  rating: number
+    bio: string
+    categories: string[]
   location: string
-  description: string
-  image: string
+    website?: string
+  }
+  reputation: {
+    score: number
+    totalTransactions: number
+    completedTransactions: number
+  }
 }
 
 interface VendorDiscoveryProps {
   onClose: () => void
 }
 
-const mockVendors: Vendor[] = [
-  {
-    id: '1',
-    name: 'TechGear Store',
-    category: 'Electronics',
-    rating: 4.8,
-    location: 'Lagos, Nigeria',
-    description: 'Premium electronics and gadgets for tech enthusiasts',
-    image: '/vendor-tech.jpg'
-  },
-  {
-    id: '2',
-    name: 'Fashion Forward',
-    category: 'Fashion',
-    rating: 4.6,
-    location: 'Abuja, Nigeria',
-    description: 'Trendy fashion items and accessories',
-    image: '/vendor-fashion.jpg'
-  },
-  {
-    id: '3',
-    name: 'Home Essentials',
-    category: 'Home & Garden',
-    rating: 4.9,
-    location: 'Port Harcourt, Nigeria',
-    description: 'Quality home and garden products',
-    image: '/vendor-home.jpg'
-  }
-]
-
 export default function VendorDiscovery({ onClose }: VendorDiscoveryProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [vendors] = useState<Vendor[]>(mockVendors)
+  const [vendors, setVendors] = useState<Vendor[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const categories = ['all', 'Electronics', 'Fashion', 'Home & Garden', 'Food', 'Services']
+  const categories = ['all', 'electronics', 'clothing', 'food', 'services', 'digital', 'art', 'home', 'beauty', 'sports', 'automotive']
+
+  useEffect(() => {
+    fetchVendors()
+  }, [])
+
+  const fetchVendors = async () => {
+    try {
+      setIsLoading(true)
+      setError('')
+      
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'
+      const response = await fetch(`${backendUrl}/api/vendors`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch vendors')
+      }
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setVendors(data.data.vendors || [])
+      } else {
+        throw new Error(data.error || 'Failed to load vendors')
+      }
+    } catch (error) {
+      console.error('Error fetching vendors:', error)
+      setError('Failed to load vendors. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const filteredVendors = vendors.filter(vendor => {
-    const matchesSearch = vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         vendor.description.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = selectedCategory === 'all' || vendor.category === selectedCategory
+    const matchesSearch = vendor.profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         vendor.profile.bio.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = selectedCategory === 'all' || 
+                           vendor.profile.categories.some(cat => cat.toLowerCase() === selectedCategory.toLowerCase())
     return matchesSearch && matchesCategory
   })
 
   const handleStartChat = (vendor: Vendor) => {
     // This would typically open a chat with the vendor
-    console.log('Starting chat with:', vendor.name)
+    console.log('Starting chat with:', vendor.profile.name)
     onClose()
   }
 
@@ -115,7 +127,23 @@ export default function VendorDiscovery({ onClose }: VendorDiscoveryProps) {
 
         {/* Vendor List */}
         <div className="flex-1 overflow-y-auto space-y-4">
-          {filteredVendors.map((vendor) => (
+          {isLoading ? (
+            <div className="text-center py-8">
+              <Loader2 className="w-8 h-8 text-linka-emerald animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Loading vendors...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <p className="text-red-600 mb-4">{error}</p>
+              <button
+                onClick={fetchVendors}
+                className="bg-linka-emerald text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : filteredVendors.length > 0 ? (
+            filteredVendors.map((vendor) => (
             <div
               key={vendor.id}
               className="border border-gray-200 rounded-xl p-4 hover:border-linka-emerald transition-colors"
@@ -123,27 +151,31 @@ export default function VendorDiscovery({ onClose }: VendorDiscoveryProps) {
               <div className="flex items-start space-x-4">
                 <div className="w-16 h-16 bg-linka-blue rounded-xl flex items-center justify-center">
                   <span className="text-2xl font-bold text-linka-emerald">
-                    {vendor.name.charAt(0)}
+                      {vendor.profile.name.charAt(0)}
                   </span>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-linka-black">{vendor.name}</h3>
+                      <h3 className="font-semibold text-linka-black">{vendor.profile.name}</h3>
                     <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 text-linka-accent fill-current" />
-                      <span className="text-sm text-gray-600">{vendor.rating}</span>
-                    </div>
+                        <span className="text-sm text-gray-600">{vendor.reputation.score}</span>
+                      </div>
                   </div>
                   <div className="flex items-center space-x-4 mb-2">
                     <span className="text-sm bg-linka-blue text-linka-emerald px-2 py-1 rounded-full">
-                      {vendor.category}
+                        {vendor.profile.categories.join(', ')}
                     </span>
                     <div className="flex items-center space-x-1 text-gray-600">
                       <MapPin className="w-4 h-4" />
-                      <span className="text-sm">{vendor.location}</span>
+                        <span className="text-sm">{vendor.profile.location}</span>
+                      </div>
                     </div>
+                    <p className="text-sm text-gray-600 mb-3">{vendor.profile.bio}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-gray-500">
+                        {vendor.reputation.completedTransactions} completed transactions
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">{vendor.description}</p>
                   <button
                     onClick={() => handleStartChat(vendor)}
                     className="flex items-center space-x-2 bg-linka-emerald text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
@@ -155,9 +187,9 @@ export default function VendorDiscovery({ onClose }: VendorDiscoveryProps) {
                 </div>
               </div>
             </div>
-          ))}
-          
-          {filteredVendors.length === 0 && (
+              </div>
+            ))
+          ) : (
             <div className="text-center py-8">
               <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-600 mb-2">No vendors found</h3>

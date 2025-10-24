@@ -3,10 +3,13 @@ import { User } from '../models/User';
 import { logger } from '../utils/logger';
 import { asyncHandler } from '../middleware';
 import { ApiResponse } from '../types';
+import { WalletService } from '../services/WalletService';
 
 export class IdentityController {
+  private static walletService = new WalletService();
+
   static createUser = asyncHandler(async (req: Request, res: Response) => {
-    const { email, walletAddress, profile } = req.body;
+    const { email, profile, consentGiven, googleId, phoneNumber, baseName, ensName } = req.body;
     
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -17,9 +20,19 @@ export class IdentityController {
       });
     }
 
+    // Create wallet
+    const { address: walletAddress, encryptedPrivateKey } = await IdentityController.walletService.createWallet();
+
     const user = new User({
       email,
       walletAddress,
+      encryptedPrivateKey,
+      consentGiven: consentGiven || false,
+      onboardingCompleted: true,
+      googleId,
+      phoneNumber,
+      baseName,
+      ensName,
       profile: {
         name: profile.name,
         bio: profile.bio,
@@ -36,7 +49,12 @@ export class IdentityController {
     const response: ApiResponse = {
       success: true,
       message: 'User created successfully',
-      data: user
+      data: {
+        email: user.email,
+        walletAddress: user.walletAddress,
+        profile: user.profile,
+        onboardingCompleted: user.onboardingCompleted
+      }
     };
     
     res.status(201).json(response);
@@ -55,10 +73,103 @@ export class IdentityController {
 
     const response: ApiResponse = {
       success: true,
-      data: user
+      data: {
+        email: user.email,
+        walletAddress: user.walletAddress,
+        profile: user.profile,
+        onboardingCompleted: user.onboardingCompleted,
+        consentGiven: user.consentGiven,
+        reputation: user.reputation
+      }
     };
 
     res.status(200).json(response);
+  });
+
+  static checkOnboarding = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.params;
+    const user = await User.findOne({ email });
+    
+    const response: ApiResponse = {
+      success: true,
+      data: {
+        exists: !!user,
+        onboardingCompleted: user?.onboardingCompleted || false,
+        user: user ? {
+          email: user.email,
+          profile: user.profile,
+          walletAddress: user.walletAddress
+        } : null
+      }
+    };
+
+    res.status(200).json(response);
+  });
+
+  static completeOnboarding = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.params;
+    const { consentGiven } = req.body;
+    
+    const user = await User.findOneAndUpdate(
+      { email },
+      { 
+        onboardingCompleted: true,
+        consentGiven: consentGiven || false
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'User not found' 
+      });
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Onboarding completed successfully',
+      data: {
+        email: user.email,
+        onboardingCompleted: user.onboardingCompleted,
+        consentGiven: user.consentGiven
+      }
+    };
+
+    res.status(200).json(response);
+  });
+
+  static getWalletBalance = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.params;
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'User not found' 
+      });
+    }
+
+    try {
+      const balance = await IdentityController.walletService.getWalletBalance(user.encryptedPrivateKey);
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          walletAddress: user.walletAddress,
+          balance: balance,
+          currency: 'ETH'
+        }
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('Error getting wallet balance:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get wallet balance'
+      });
+    }
   });
 
   static linkFarcaster = asyncHandler(async (req: Request, res: Response) => {
@@ -113,6 +224,116 @@ export class IdentityController {
     res.status(200).json(response);
   });
 
+  static createVendor = asyncHandler(async (req: Request, res: Response) => {
+    const { email, profile, consentGiven, googleId, phoneNumber, baseName, ensName } = req.body;
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'User already exists' 
+      });
+    }
+
+    // Create wallet
+    const { address: walletAddress, encryptedPrivateKey } = await IdentityController.walletService.createWallet();
+
+    const user = new User({
+      email,
+      walletAddress,
+      encryptedPrivateKey,
+      consentGiven: consentGiven || false,
+      onboardingCompleted: true,
+      googleId,
+      phoneNumber,
+      baseName,
+      ensName,
+      profile: {
+        name: profile.name,
+        bio: profile.bio,
+        isVendor: true, // Force vendor status
+        categories: profile.categories || [],
+        avatar: profile.avatar,
+        location: profile.location,
+        website: profile.website
+      }
+    });
+
+    await user.save();
+    
+    const response: ApiResponse = {
+      success: true,
+      message: 'Vendor created successfully',
+      data: {
+        email: user.email,
+        walletAddress: user.walletAddress,
+        profile: user.profile,
+        onboardingCompleted: user.onboardingCompleted
+      }
+    };
+    
+    res.status(201).json(response);
+  });
+
+  static updateVendor = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.params;
+    const { profile } = req.body;
+    
+    const user = await User.findOneAndUpdate(
+      { email, 'profile.isVendor': true },
+      { 
+        profile: {
+          ...profile,
+          isVendor: true // Ensure vendor status is maintained
+        }
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Vendor not found' 
+      });
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Vendor profile updated successfully',
+      data: {
+        email: user.email,
+        profile: user.profile
+      }
+    };
+
+    res.status(200).json(response);
+  });
+
+  static getVendor = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.params;
+    const user = await User.findOne({ email, 'profile.isVendor': true });
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Vendor not found' 
+      });
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      data: {
+        email: user.email,
+        walletAddress: user.walletAddress,
+        profile: user.profile,
+        reputation: user.reputation
+      }
+    };
+
+    res.status(200).json(response);
+  });
+
   static getVendors = asyncHandler(async (req: Request, res: Response) => {
     const { category, minReputation = 0, page = 1, limit = 20 } = req.query;
     
@@ -137,7 +358,13 @@ export class IdentityController {
     const response: ApiResponse = {
       success: true,
       data: {
-        vendors,
+        vendors: vendors.map(vendor => ({
+          id: vendor._id,
+          email: vendor.email,
+          walletAddress: vendor.walletAddress,
+          profile: vendor.profile,
+          reputation: vendor.reputation
+        })),
         pagination: {
           page: Number(page),
           limit: Number(limit),

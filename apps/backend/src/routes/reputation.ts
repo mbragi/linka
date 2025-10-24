@@ -1,5 +1,7 @@
-import { Router } from 'express';
+import { NextFunction, Router } from 'express';
 import { ReputationController } from '../controllers/ReputationController';
+import { asyncHandler } from '../middleware';
+import { Request, Response } from 'express';
 
 const router = Router();
 
@@ -11,7 +13,7 @@ export const initializeReputationRoutes = (reputationService: any) => {
 };
 
 // Reputation management routes
-router.get('/:userAddress', (req, res) => reputationController.getReputation(req, res));
-router.post('/update', (req, res) => reputationController.updateReputation(req, res));
+router.get('/:userAddress', asyncHandler(async (req: Request, res: Response, next: NextFunction) => reputationController.getReputation(req, res, next)));
+router.post('/update', asyncHandler(async (req: Request, res: Response, next: NextFunction) => reputationController.updateReputation(req, res, next)));
 
 export default router;
