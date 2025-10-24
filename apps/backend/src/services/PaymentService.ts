@@ -1,13 +1,13 @@
-import { BlockchainService } from './BlockchainService';
+import { BlockchainService, ProviderConfig } from './BlockchainService';
 import { ethers } from 'ethers';
 
 export class PaymentService extends BlockchainService {
-  constructor(provider: any, privateKey: string, paymentProcessorAddress: string) {
+  constructor(providerConfig: ProviderConfig, privateKey: string, paymentProcessorAddress: string) {
     const paymentProcessorABI = [
       "function makePayment(address _payee, uint256 _amount, address _token) external payable returns (bytes32)"
     ];
     
-    super(provider, privateKey, paymentProcessorAddress, paymentProcessorABI);
+    super(providerConfig, privateKey, paymentProcessorAddress, paymentProcessorABI);
   }
 
   async makePayment(payee: string, amount: string, tokenAddress: string): Promise<any> {

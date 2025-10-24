@@ -99,6 +99,25 @@ async function callBackendTool(tool: string, params: any, userEmail?: string) {
       const transactionResponse = await fetch(`${backendUrl}/api/transactions/${userEmail || params.email}/${params.transactionId}`);
       return await transactionResponse.json();
     
+    case 'fund_wallet':
+      const fundResponse = await fetch(`${backendUrl}/api/identity/${userEmail}/wallet/balance`);
+      const fundData = await fundResponse.json();
+      return {
+        success: true,
+        data: {
+          walletAddress: fundData.data?.walletAddress,
+          balance: fundData.data?.balance,
+          currency: fundData.data?.currency,
+          network: fundData.data?.network,
+          fundingInstructions: {
+            network: fundData.data?.network?.name || 'Base Sepolia',
+            chainId: fundData.data?.network?.chainId || 84532,
+            token: 'ETH',
+            note: `Make sure you're sending on the ${fundData.data?.network?.name || 'Base Sepolia'} testnet`
+          }
+        }
+      };
+    
     case 'get_wallet_balance':
       if (userEmail) {
         const balanceResponse = await fetch(`${backendUrl}/api/identity/${userEmail}/wallet/balance`);
@@ -136,11 +155,13 @@ Available tools:
 - file_dispute: File disputes for unresolved transactions
 - get_transaction_status: Check transaction status and timeline
 - get_wallet_balance: Get user's wallet balance
+- fund_wallet: Get wallet funding information and address for the user
 - create_vendor: Create a new vendor profile
 
 If a user asks about vendors, shopping, or marketplace, you can use the search_vendors tool.
 If a user wants to make a purchase or book a service, you can use create_escrow.
 If a user asks about their wallet or balance, you can use the get_wallet_balance tool.
+If a user wants to fund their wallet or get funding instructions, you can use the fund_wallet tool.
 If a user wants to check transaction status, use get_transaction_status.
 If a user wants to become a vendor, use create_vendor.
 
@@ -340,6 +361,18 @@ Be helpful, friendly, and focused on marketplace activities.`;
           function: {
             name: "get_wallet_balance",
             description: "Get user's wallet balance",
+            parameters: {
+              type: "object",
+              properties: {},
+              required: []
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "fund_wallet",
+            description: "Get wallet funding information and address for the user",
             parameters: {
               type: "object",
               properties: {},

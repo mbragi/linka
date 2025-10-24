@@ -1,8 +1,9 @@
-import { BlockchainService } from './BlockchainService';
+import { BlockchainService, ProviderConfig } from './BlockchainService';
 import { logger } from '../utils/logger';
+import { ethers } from 'ethers';
 
 export class EscrowService extends BlockchainService {
-  constructor(provider: any, privateKey: string, escrowManagerAddress: string) {
+  constructor(providerConfig: ProviderConfig, privateKey: string, escrowManagerAddress: string) {
     const escrowManagerABI = [
       "function createEscrow(address _seller, uint256 _amount, address _token, uint256 _deadline) external payable returns (bytes32)",
       "function releaseEscrow(bytes32 _escrowId) external",
@@ -11,7 +12,7 @@ export class EscrowService extends BlockchainService {
       "function escrows(bytes32) external view returns (address buyer, address seller, uint256 amount, address token, uint256 deadline, bool released, bool refunded, bool disputed)"
     ];
     
-    super(provider, privateKey, escrowManagerAddress, escrowManagerABI);
+    super(providerConfig, privateKey, escrowManagerAddress, escrowManagerABI);
   }
 
   async createEscrow(seller: string, amount: string, tokenAddress: string, deadline: number): Promise<any> {

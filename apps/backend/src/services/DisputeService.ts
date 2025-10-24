@@ -1,8 +1,8 @@
-import { BlockchainService } from './BlockchainService';
+import { BlockchainService, ProviderConfig } from './BlockchainService';
 import { ethers } from 'ethers';
 
 export class DisputeService extends BlockchainService {
-  constructor(provider: any, privateKey: string, disputeResolutionAddress: string) {
+  constructor(providerConfig: ProviderConfig, privateKey: string, disputeResolutionAddress: string) {
     const disputeResolutionABI = [
       "function openDispute(bytes32 _escrowId, string calldata _evidence) external",
       "function addEvidence(bytes32 _escrowId, string calldata _evidence) external",
@@ -10,7 +10,7 @@ export class DisputeService extends BlockchainService {
       "function disputes(bytes32) external view returns (bytes32 escrowId, address buyer, address seller, uint256 amount, address token, uint8 status, string buyerEvidence, string sellerEvidence)"
     ];
     
-    super(provider, privateKey, disputeResolutionAddress, disputeResolutionABI);
+    super(providerConfig, privateKey, disputeResolutionAddress, disputeResolutionABI);
   }
 
   async openDispute(escrowId: string, evidence: string): Promise<any> {

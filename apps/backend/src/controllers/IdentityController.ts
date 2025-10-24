@@ -4,9 +4,33 @@ import { logger } from '../utils/logger';
 import { asyncHandler } from '../middleware';
 import { ApiResponse } from '../types';
 import { WalletService } from '../services/WalletService';
+import { ethers } from 'ethers';
 
 export class IdentityController {
   private static walletService = new WalletService();
+  private static provider: ethers.Provider | null = null;
+
+  // Initialize provider with error handling
+  private static initializeProvider(): ethers.Provider | null {
+    if (this.provider) {
+      return this.provider;
+    }
+
+    const rpcUrl = process.env.BASE_RPC_URL;
+    if (!rpcUrl) {
+      logger.warn('BASE_RPC_URL not set, wallet balance will use fallback');
+      return null;
+    }
+
+    try {
+      this.provider = new ethers.JsonRpcProvider(rpcUrl);
+      logger.info(`Initialized RPC provider with URL: ${rpcUrl}`);
+      return this.provider;
+    } catch (error) {
+      logger.warn('Failed to initialize RPC provider:', error);
+      return null;
+    }
+  }
 
   static createUser = asyncHandler(async (req: Request, res: Response) => {
     const { email, profile, consentGiven, googleId, phoneNumber, baseName, ensName } = req.body;
@@ -142,23 +166,39 @@ export class IdentityController {
   static getWalletBalance = asyncHandler(async (req: Request, res: Response) => {
     const { email } = req.params;
     const user = await User.findOne({ email });
-    
+
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        error: 'User not found' 
+        error: 'User not found'
       });
     }
 
     try {
-      const balance = await IdentityController.walletService.getWalletBalance(user.encryptedPrivateKey);
-      
+      const provider = IdentityController.initializeProvider();
+      const balance = await IdentityController.walletService.getWalletBalance(user.encryptedPrivateKey, provider || undefined);
+
+      // Get network information
+      let networkInfo = { name: 'Base Sepolia', chainId: 84532 };
+      if (provider) {
+        try {
+          const network = await provider.getNetwork();
+          networkInfo = {
+            name: network.name,
+            chainId: Number(network.chainId)
+          };
+        } catch (error) {
+          logger.warn('Could not get network info, using defaults:', error);
+        }
+      }
+
       const response: ApiResponse = {
         success: true,
         data: {
           walletAddress: user.walletAddress,
           balance: balance,
-          currency: 'ETH'
+          currency: 'ETH',
+          network: networkInfo
         }
       };
 
