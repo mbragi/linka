@@ -6,12 +6,14 @@ import { CheckCircle, ArrowRight, User, Mail, Lock, Shield, Wallet } from 'lucid
 interface OnboardingModalProps {
   onComplete: (userData: any) => void
   onSignIn: (email: string) => void
+  isNewUser?: boolean
 }
 
 type OnboardingStep = 'welcome' | 'consent' | 'identity' | 'google' | 'wallet' | 'complete'
 
-export default function OnboardingModal({ onComplete, onSignIn }: OnboardingModalProps) {
-  const [step, setStep] = useState<OnboardingStep>('welcome')
+export default function OnboardingModal({ onComplete, onSignIn, isNewUser = true }: OnboardingModalProps) {
+  const [step, setStep] = useState<OnboardingStep>(isNewUser ? 'welcome' : 'identity')
+  const [currentIsNewUser, setCurrentIsNewUser] = useState(isNewUser)
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -23,12 +25,15 @@ export default function OnboardingModal({ onComplete, onSignIn }: OnboardingModa
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const steps = [
+  const steps = currentIsNewUser ? [
     { id: 'welcome', title: 'Welcome', icon: User },
-    { id: 'consent', title: 'Consent', icon: Shield },
     { id: 'identity', title: 'Identity', icon: Mail },
+    { id: 'consent', title: 'Consent', icon: Shield },
     { id: 'google', title: 'Google', icon: Lock },
     { id: 'wallet', title: 'Wallet', icon: Wallet },
+    { id: 'complete', title: 'Complete', icon: CheckCircle }
+  ] : [
+    { id: 'identity', title: 'Sign In', icon: Mail },
     { id: 'complete', title: 'Complete', icon: CheckCircle }
   ]
 
@@ -37,16 +42,22 @@ export default function OnboardingModal({ onComplete, onSignIn }: OnboardingModa
 
   const handleNext = () => {
     if (step === 'welcome') {
-      setStep('consent')
-    } else if (step === 'consent') {
-      if (!formData.consentGiven) {
-        setError('Please accept the terms to continue')
-        return
-      }
       setStep('identity')
     } else if (step === 'identity') {
       if (!formData.email || !formData.name) {
         setError('Please fill in all required fields')
+        return
+      }
+      if (currentIsNewUser) {
+        setStep('consent')
+      } else {
+        // For returning users, skip to sign in
+        handleSignIn()
+        return
+      }
+    } else if (step === 'consent') {
+      if (!formData.consentGiven) {
+        setError('Please accept the terms to continue')
         return
       }
       setStep('google')
@@ -68,7 +79,8 @@ export default function OnboardingModal({ onComplete, onSignIn }: OnboardingModa
 
     try {
       // Create user account
-      const response = await fetch('/api/identity/create', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'
+      const response = await fetch(`${backendUrl}/api/identity/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,15 +125,21 @@ export default function OnboardingModal({ onComplete, onSignIn }: OnboardingModa
   }
 
   const handleSignIn = async () => {
+    if (!formData.email) {
+      setError('Please enter your email address')
+      return
+    }
+
     setIsLoading(true)
     setError('')
 
     try {
-      const response = await fetch(`/api/identity/${formData.email}`)
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'
+      const response = await fetch(`${backendUrl}/api/identity/${formData.email}`)
       const data = await response.json()
 
       if (!data.success) {
-        throw new Error('User not found')
+        throw new Error('User not found. Please create a new account.')
       }
 
       // Store user session
@@ -135,7 +153,7 @@ export default function OnboardingModal({ onComplete, onSignIn }: OnboardingModa
       onSignIn(formData.email)
     } catch (error) {
       console.error('Error signing in:', error)
-      setError('User not found. Please check your email or create a new account.')
+      setError(error instanceof Error ? error.message : 'Failed to sign in. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -368,7 +386,7 @@ export default function OnboardingModal({ onComplete, onSignIn }: OnboardingModa
         )}
 
         {/* Sign In Option */}
-        {step === 'identity' && (
+        {step === 'identity' && currentIsNewUser && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-600 text-center mb-3">
               Already have an account?
@@ -379,6 +397,21 @@ export default function OnboardingModal({ onComplete, onSignIn }: OnboardingModa
               className="w-full py-2 border border-linka-emerald text-linka-emerald rounded-xl font-medium hover:bg-linka-blue transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Signing In...' : 'Sign In'}
+            </button>
+          </div>
+        )}
+
+        {/* Create Account Option */}
+        {step === 'identity' && !currentIsNewUser && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600 text-center mb-3">
+              Don't have an account?
+            </p>
+            <button
+              onClick={() => setCurrentIsNewUser(true)}
+              className="w-full py-2 border border-linka-emerald text-linka-emerald rounded-xl font-medium hover:bg-linka-blue transition-colors"
+            >
+              Create New Account
             </button>
           </div>
         )}

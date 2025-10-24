@@ -48,7 +48,6 @@ mongoose.connect(process.env.DATABASE_URL || 'mongodb://localhost:27017/linka')
   });
 
 // Initialize blockchain services
-const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
 const privateKey = process.env.PRIVATE_KEY;
 const escrowManagerAddress = process.env.ESCROW_MANAGER_ADDRESS;
 const paymentProcessorAddress = process.env.PAYMENT_PROCESSOR_ADDRESS;
@@ -60,10 +59,18 @@ if (!privateKey || !escrowManagerAddress || !paymentProcessorAddress || !reputat
   process.exit(1);
 }
 
-const escrowService = new EscrowService(provider, privateKey, escrowManagerAddress);
-const paymentService = new PaymentService(provider, privateKey, paymentProcessorAddress);
-const reputationService = new ReputationService(provider, privateKey, reputationRegistryAddress);
-const disputeService = new DisputeService(provider, privateKey, disputeResolutionAddress);
+// Create provider configuration for Base Sepolia testnet
+const providerConfig = {
+  rpcUrl: process.env.BASE_RPC_URL || 'https://sepolia.base.org',
+  chainId: 84532,
+  name: 'Base Sepolia',
+  timeout: 10000
+};
+
+const escrowService = new EscrowService(providerConfig, privateKey, escrowManagerAddress);
+const paymentService = new PaymentService(providerConfig, privateKey, paymentProcessorAddress);
+const reputationService = new ReputationService(providerConfig, privateKey, reputationRegistryAddress);
+const disputeService = new DisputeService(providerConfig, privateKey, disputeResolutionAddress);
 
 // Initialize route controllers with services
 initializeEscrowRoutes(escrowService, disputeService);

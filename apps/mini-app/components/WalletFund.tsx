@@ -1,16 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import { Wallet, CreditCard, ArrowRight, CheckCircle } from 'lucide-react'
+import { Wallet, CreditCard, ArrowRight, CheckCircle, Copy } from 'lucide-react'
 
 interface WalletFundProps {
   onClose: () => void
+  walletAddress?: string
+  networkInfo?: {
+    name: string
+    chainId: number
+  }
+  onBalanceRefresh?: () => void
 }
 
-export default function WalletFund({ onClose }: WalletFundProps) {
-  const [step, setStep] = useState<'method' | 'amount' | 'processing' | 'success'>('method')
-  const [selectedMethod, setSelectedMethod] = useState<'bread' | 'card'>('bread')
+export default function WalletFund({ onClose, walletAddress, networkInfo, onBalanceRefresh }: WalletFundProps) {
+  const [step, setStep] = useState<'method' | 'amount' | 'wallet' | 'processing' | 'success'>('method')
+  const [selectedMethod, setSelectedMethod] = useState<'bread' | 'transfer'>('bread')
   const [amount, setAmount] = useState('')
+  const [isRefreshingBalance, setIsRefreshingBalance] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const fundingMethods = [
     {
@@ -18,21 +26,54 @@ export default function WalletFund({ onClose }: WalletFundProps) {
       name: 'Bread.africa',
       description: 'Bank transfer & virtual account',
       icon: Wallet,
-      recommended: true
+      recommended: true,
+      comingSoon: true
     },
     {
-      id: 'card',
-      name: 'Card Payment',
-      description: 'Credit/debit card via Paystack',
+      id: 'transfer',
+      name: 'Transfer Directly',
+      description: 'Send ETH to your wallet address',
       icon: CreditCard,
       recommended: false
     }
   ]
 
-  const handleFundWallet = () => {
+  const handleCopyAddress = async () => {
+    if (walletAddress) {
+      try {
+        await navigator.clipboard.writeText(walletAddress)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      } catch (error) {
+        console.error('Failed to copy address:', error)
+      }
+    }
+  }
+
+  const handleNext = () => {
+    if (step === 'method') {
+      if (selectedMethod === 'transfer') {
+        setStep('wallet')
+      } else {
+        setStep('amount')
+      }
+    } else if (step === 'amount') {
+      setStep('processing')
+    }
+  }
+
+  const handleFundsSent = async () => {
+    setIsRefreshingBalance(true)
     setStep('processing')
-    // Simulate processing
+    
+    // Trigger balance refresh
+    if (onBalanceRefresh) {
+      await onBalanceRefresh()
+    }
+    
+    // Wait a moment to allow balance to update
     setTimeout(() => {
+      setIsRefreshingBalance(false)
       setStep('success')
     }, 2000)
   }
@@ -45,7 +86,7 @@ export default function WalletFund({ onClose }: WalletFundProps) {
             <CheckCircle className="w-16 h-16 text-linka-emerald mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-linka-black mb-2">Wallet Funded!</h3>
             <p className="text-gray-600 mb-6">
-              Your wallet has been successfully funded with ${amount}. You can now start making payments onchain.
+              Your wallet balance has been updated. You can now start making payments onchain.
             </p>
             <button
               onClick={onClose}
@@ -79,12 +120,13 @@ export default function WalletFund({ onClose }: WalletFundProps) {
               {fundingMethods.map((method) => (
                 <button
                   key={method.id}
-                  onClick={() => setSelectedMethod(method.id as 'bread' | 'card')}
+                  onClick={() => setSelectedMethod(method.id as 'bread' | 'transfer')}
                   className={`w-full p-4 border rounded-xl text-left transition-colors ${
                     selectedMethod === method.id
                       ? 'border-linka-emerald bg-linka-blue'
                       : 'border-gray-200 hover:border-linka-blue'
-                  }`}
+                  } ${method.comingSoon ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  disabled={method.comingSoon}
                 >
                   <div className="flex items-center space-x-3">
                     <method.icon className="w-6 h-6 text-linka-emerald" />
@@ -96,6 +138,11 @@ export default function WalletFund({ onClose }: WalletFundProps) {
                             Recommended
                           </span>
                         )}
+                        {method.comingSoon && (
+                          <span className="text-xs bg-gray-400 text-white px-2 py-1 rounded-full">
+                            Coming Soon
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-gray-600">{method.description}</p>
                     </div>
@@ -104,11 +151,52 @@ export default function WalletFund({ onClose }: WalletFundProps) {
               ))}
             </div>
             <button
-              onClick={() => setStep('amount')}
+              onClick={handleNext}
               className="w-full mt-6 bg-linka-emerald text-white py-3 rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center space-x-2"
             >
               <span>Continue</span>
               <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {step === 'wallet' && (
+          <div>
+            <div className="w-16 h-16 bg-linka-blue rounded-full flex items-center justify-center mx-auto mb-6">
+              <Wallet className="w-8 h-8 text-linka-emerald" />
+            </div>
+            <h2 className="text-xl font-bold text-linka-black mb-4 text-center">Transfer Directly</h2>
+            <p className="text-gray-600 mb-6 text-center">
+              Send ETH directly to your wallet address:
+            </p>
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <code className="text-sm text-gray-700 break-all flex-1 mr-2">
+                  {walletAddress || 'Wallet address not available'}
+                </code>
+                <button
+                  onClick={handleCopyAddress}
+                  className="flex items-center space-x-1 px-2 py-1 text-xs bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                  title="Copy address"
+                >
+                  <Copy className="w-3 h-3 text-gray-600" />
+                  <span className="text-gray-600">{copied ? 'Copied!' : 'Copy'}</span>
+                </button>
+              </div>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-800">
+                <strong>Network:</strong> {networkInfo?.name || 'Base Sepolia'} ({networkInfo?.chainId || 84532})<br/>
+                <strong>Token:</strong> ETH<br/>
+                <strong>Note:</strong> Make sure you're sending on the {networkInfo?.name || 'Base Sepolia'} testnet
+              </p>
+            </div>
+            <button
+              onClick={handleFundsSent}
+              disabled={isRefreshingBalance}
+              className="w-full bg-linka-emerald text-white py-3 rounded-xl font-medium hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isRefreshingBalance ? 'Refreshing Balance...' : "I've Sent the Funds"}
             </button>
           </div>
         )}
@@ -136,7 +224,7 @@ export default function WalletFund({ onClose }: WalletFundProps) {
                 Back
               </button>
               <button
-                onClick={handleFundWallet}
+                onClick={handleNext}
                 disabled={!amount || parseFloat(amount) <= 0}
                 className="flex-1 bg-linka-emerald text-white py-3 rounded-xl font-medium hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
@@ -149,9 +237,14 @@ export default function WalletFund({ onClose }: WalletFundProps) {
         {step === 'processing' && (
           <div className="text-center py-8">
             <div className="w-16 h-16 border-4 border-linka-emerald border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <h3 className="text-lg font-semibold text-linka-black mb-2">Processing Payment</h3>
+            <h3 className="text-lg font-semibold text-linka-black mb-2">
+              {isRefreshingBalance ? 'Refreshing Balance' : 'Processing Payment'}
+            </h3>
             <p className="text-gray-600">
-              Please wait while we process your ${amount} payment...
+              {isRefreshingBalance 
+                ? 'Checking for new transactions and updating your wallet balance...'
+                : `Please wait while we process your $${amount} payment...`
+              }
             </p>
           </div>
         )}

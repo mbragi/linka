@@ -20,12 +20,24 @@ interface User {
   onboardingCompleted: boolean
 }
 
+interface WalletBalance {
+  balance: string
+  currency: string
+  walletAddress: string
+  network?: {
+    name: string
+    chainId: number
+  }
+}
+
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isInitialized, setIsInitialized] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [isCheckingUser, setIsCheckingUser] = useState(true)
+  const [isNewUser, setIsNewUser] = useState(true)
+  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null)
 
   useEffect(() => {
     checkUserSession()
@@ -42,8 +54,27 @@ export default function Home() {
         }
       ])
       setIsInitialized(true)
+      fetchWalletBalance()
     }
   }, [user, isInitialized])
+
+  const fetchWalletBalance = async () => {
+    if (!user) return
+    
+    try {
+      console.debug('Fetching wallet balance for user:', user.email)
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'
+      console.debug('Backend URL:', backendUrl)
+      const response = await fetch(`${backendUrl}/api/identity/${user.email}/wallet/balance`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setWalletBalance(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error)
+    }
+  }
 
   const checkUserSession = async () => {
     try {
@@ -58,6 +89,8 @@ export default function Home() {
       console.error('Error checking user session:', error)
     }
     
+    // No stored user, show onboarding for new users
+    setIsNewUser(true)
     setIsCheckingUser(false)
     setShowOnboarding(true)
   }
@@ -80,6 +113,7 @@ export default function Home() {
       onboardingCompleted: true
     })
     setShowOnboarding(false)
+    fetchWalletBalance()
   }
 
   const handleSignIn = (email: string) => {
@@ -90,6 +124,7 @@ export default function Home() {
       onboardingCompleted: true
     })
     setShowOnboarding(false)
+    fetchWalletBalance()
   }
 
   const handleSendMessage = async (text: string) => {
@@ -180,6 +215,7 @@ export default function Home() {
       <OnboardingModal 
         onComplete={handleOnboardingComplete}
         onSignIn={handleSignIn}
+        isNewUser={isNewUser}
       />
     )
   }
@@ -201,9 +237,26 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-linka-emerald rounded-full"></div>
-          <span className="text-sm">Online</span>
+        <div className="flex items-center space-x-4">
+          {walletBalance && (
+            <div className="flex items-center space-x-2 bg-linka-blue px-3 py-1 rounded-lg">
+              <Wallet className="w-4 h-4 text-linka-emerald" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-linka-black">
+                  {walletBalance.balance} {walletBalance.currency}
+                </span>
+                {walletBalance.network && (
+                  <span className="text-xs text-gray-600">
+                    {walletBalance.network.name} ({walletBalance.network.chainId})
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-linka-emerald rounded-full"></div>
+            <span className="text-sm">Online</span>
+          </div>
         </div>
       </div>
 
@@ -282,9 +335,14 @@ export default function Home() {
       </div>
 
       {/* Wallet Fund Modal */}
-      {showWalletFund && (
-        <WalletFund onClose={() => setShowWalletFund(false)} />
-      )}
+        {showWalletFund && (
+          <WalletFund 
+            onClose={() => setShowWalletFund(false)} 
+            walletAddress={user?.walletAddress}
+            networkInfo={walletBalance?.network}
+            onBalanceRefresh={fetchWalletBalance}
+          />
+        )}
 
       {/* Vendor Discovery Modal */}
       {showVendorDiscovery && (

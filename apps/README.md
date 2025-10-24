@@ -18,10 +18,3 @@ Frontend applications for Linka's multi-channel conversational marketplace.
 # Run mini app (universal web app with webhooks)
 npm run dev:mini-app
 ```
-
-## Shared Dependencies
-
-Apps can share:
-- UI components from `libs/ui-components`
-- TypeScript types from `libs/messaging_core`
-- Common utilities and helpers

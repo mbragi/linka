@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { logger } from '../utils/logger';
 
 export class WalletService {
@@ -42,22 +42,20 @@ export class WalletService {
    */
   decryptPrivateKey(encryptedPrivateKey: string): string {
     try {
-      const algorithm = 'aes-256-gcm';
+      const algorithm = 'aes-256-cbc';
       const key = crypto.scryptSync(this.encryptionKey, 'salt', 32);
       
       // Split the encrypted data
       const parts = encryptedPrivateKey.split(':');
-      if (parts.length !== 3) {
+      if (parts.length !== 2) {
         throw new Error('Invalid encrypted private key format');
       }
 
       const iv = Buffer.from(parts[0], 'hex');
-      const authTag = Buffer.from(parts[1], 'hex');
-      const encrypted = Buffer.from(parts[2], 'hex');
+      const encrypted = Buffer.from(parts[1], 'hex');
 
       // Decrypt
-      const decipher = crypto.createDecipherGCM(algorithm, key);
-      decipher.setAuthTag(authTag);
+      const decipher = crypto.createDecipheriv(algorithm, key, iv);
       
       let decrypted = decipher.update(encrypted, undefined, 'utf8');
       decrypted += decipher.final('utf8');
@@ -74,20 +72,17 @@ export class WalletService {
    */
   private encryptPrivateKey(privateKey: string): string {
     try {
-      const algorithm = 'aes-256-gcm';
+      const algorithm = 'aes-256-cbc';
       const key = crypto.scryptSync(this.encryptionKey, 'salt', 32);
       const iv = crypto.randomBytes(16);
 
-      const cipher = crypto.createCipherGCM(algorithm, key);
-      cipher.setAAD(Buffer.from('linka-wallet', 'utf8'));
+      const cipher = crypto.createCipheriv(algorithm, key, iv);
 
       let encrypted = cipher.update(privateKey, 'utf8', 'hex');
       encrypted += cipher.final('hex');
 
-      const authTag = cipher.getAuthTag();
-
-      // Combine IV, auth tag, and encrypted data
-      return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+      // Combine IV and encrypted data
+      return `${iv.toString('hex')}:${encrypted}`;
     } catch (error) {
       logger.error('Error encrypting private key:', error);
       throw new Error('Failed to encrypt private key');
@@ -108,19 +103,38 @@ export class WalletService {
   }
 
   /**
-   * Get wallet balance
+   * Get wallet balance with fallback handling
    */
   async getWalletBalance(encryptedPrivateKey: string, provider?: ethers.Provider): Promise<string> {
     try {
       const wallet = this.getWallet(encryptedPrivateKey);
       
+      // Try to get balance from provider
       if (provider) {
-        const balance = await provider.getBalance(wallet.address);
-        return ethers.formatEther(balance);
+        try {
+          const balance = await provider.getBalance(wallet.address);
+          return ethers.formatEther(balance);
+        } catch (providerError) {
+          logger.warn('Provider failed, trying fallback:', providerError);
+        }
       }
       
-      // Return mock balance if no provider
+      // Fallback: try to create a new provider
+      const rpcUrl = process.env.BASE_RPC_URL;
+      if (rpcUrl) {
+        try {
+          const rpcProvider = new ethers.JsonRpcProvider(rpcUrl);
+          const balance = await rpcProvider.getBalance(wallet.address);
+          return ethers.formatEther(balance);
+        } catch (rpcError) {
+          logger.warn('RPC provider failed, using fallback balance:', rpcError);
+        }
+      }
+      
+      // Final fallback: return 0 balance
+      logger.warn(`Using fallback balance for wallet ${wallet.address}`);
       return '0.0';
+      
     } catch (error) {
       logger.error('Error getting wallet balance:', error);
       throw new Error('Failed to get wallet balance');
