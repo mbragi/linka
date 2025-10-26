@@ -625,17 +625,17 @@ This metric captures our core value proposition: we succeed when users successfu
 
 ### Core Team Required
 
-**Founder/CEO** (Samson McCarthy / Gar Manji Michael - current)
+**Founder/CEO** ([Samson McCarthy](https://github.com/Samagent97) / [Gar Manji Michael](https://github.com/mbragi) - current)
 - **Responsibilities**: Vision, fundraising, partnerships, product direction
 - **Key Skills**: Strategic thinking, network building, fundraising experience
 - **Time Commitment**: Full-time
 
-**Chief Technology Officer (CTO)**
+**Chief Technology Officer (CTO)** [Shaibu](https://github.com/shaaibu7)
 - **Responsibilities**: Technical architecture, smart contract development, platform scalability
 - **Key Skills**: Solidity, blockchain development, system architecture, team management
 - **Hiring Timeline**: Month 2-3
 
-**Head of Product**
+**Head of Product** 
 - **Responsibilities**: User experience, feature prioritization, design systems
 - **Key Skills**: Product design, user research, analytics, AI/ML products
 - **Hiring Timeline**: Month 3-4
