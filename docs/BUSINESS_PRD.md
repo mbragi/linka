@@ -704,28 +704,27 @@ This metric captures our core value proposition: we succeed when users successfu
 
 ## 11. Implementation Roadmap
 
-### Q1: Foundation (Months 1-3)
-- Launch MVP on Farcaster
+### Q1: Foundation (Months 1-2)
+- Launch MVP on Farcaster, Launch web interface
 - Onboard first 100 users
 - Process first 50 transactions
 - Build vendor network
 - Establish brand presence
 
-### Q2: Growth (Months 4-6)
-- Launch web interface
+### Q2: Growth (Months 3-4)
 - Implement viral referral program
 - Expand to 1,000 users
 - Integrate WhatsApp (Beta)
 - Fiat on-ramp development (Bread.africa)
 
-### Q3: Scale (Months 7-9)
+### Q3: Scale (Months 5-7)
 - Full WhatsApp launch in Nigeria
 - Expand to Kenya and South Africa
 - Launch premium vendor subscriptions
 - 10,000+ users milestone
 - Multi-platform expansion (Twitter)
 
-### Q4: Maturity (Months 10-12)
+### Q4: Maturity (Months 7-10)
 - Telegram integration
 - Instagram commerce (exploratory)
 - 25,000+ users
@@ -761,5 +760,5 @@ Linka solves a real problem: **trust in social commerce**. We're not just anothe
 
 *For technical details, see [ARCHITECTURE.md](./ARCHITECTURE.md)*
 
-*For investor pitch deck, contact: gar@linka.market*
+<-- *For investor pitch deck, contact: gar@linka.market*  -->
 
