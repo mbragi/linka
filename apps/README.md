@@ -8,7 +8,7 @@ This directory contains all applications for the Linka marketplace ecosystem.
 apps/
 ├── backend/       # Node.js/Express backend service
 ├── contracts/     # Solidity smart contracts for Base
-└── mini-app/      # Next.js universal app (Web + Farcaster + WaSender)
+└── frontend/      # Next.js universal app (Web + Farcaster + WaSender)
 ```
 
 ---
@@ -124,7 +124,7 @@ npm run deploy:mainnet   # Deploy to Base mainnet
 
 ---
 
-### `mini-app/` - Universal Next.js Application
+### `frontend/` - Universal Next.js Application
 
 **Technology**: Next.js 15 + React + TypeScript + OpenAI + MiniKit
 
@@ -176,7 +176,7 @@ npm run deploy:mainnet   # Deploy to Base mainnet
 
 **Development**:
 ```bash
-cd apps/mini-app
+cd apps/frontend
 npm install
 npm run dev              # Development server (port 3000)
 npm run build            # Build for production
@@ -205,9 +205,9 @@ cd apps/backend
 npm run dev              # Runs on port 4000
 ```
 
-**2. Start Mini App**:
+**2. Start Frontend**:
 ```bash
-cd apps/mini-app
+cd apps/frontend
 npm run dev              # Runs on port 3000
 ```
 
@@ -231,9 +231,9 @@ cd apps/contracts
 npm test
 ```
 
-**Mini App Tests**:
+**Frontend Tests**:
 ```bash
-cd apps/mini-app
+cd apps/frontend
 npm test
 ```
 
