@@ -2,111 +2,83 @@
 alwaysApply: true
 ---
 
- # Linka Project Rules 
+# Linka Project Rules
 
 ## 🛠️ Development Style
 
 - Do not generate boilerplate unless asked.
-- Use concise, production-level Rust and TypeScript code.
-- Prefer modular crates and shared services.
+- Use concise, production-level TypeScript and Solidity code.
+- Prefer modular services and shared utilities.
 - Do not write full UI component trees unless explicitly requested.
 
 ## 🧩 Code Structure
 
-- Rust backends live in `zapgenie-core/`
-- TypeScript adapters live in `zapgenie-adapter/`
-- Agent logic is split by intent class:
-  - `wallet.rs`, `calendar.rs`, `vendor.rs`, etc.
-- All services in `/services/` must be swappable.
-- MCP client usage must be abstracted (`/libs/ramp_core`).
+- Backend services live in `apps/backend/src/`
+- Smart contracts live in `apps/contracts/contracts/`
+- Mini-app frontend lives in `apps/mini-app/`
+- Agent logic is in `apps/mini-app/app/api/agent/route.ts`
+- All services must be swappable and testable.
 
 ## 🌐 External Service Handling
 
-- Bread.africa should be accessed via MCP if available.
-- Wasender API must not store phone data locally.
-- All third-party integrations go through adapters.
+- OpenAI GPT-4o-mini for conversational AI
+- WaSender API for WhatsApp integration
+- MongoDB for data persistence
+- Ethers.js v6 for blockchain interactions
+- All third-party integrations go through adapters/APIs
 
 ## 💬 Conversational Flow
 
 - UX must be chat-native: messages come first, UI is optional.
-- Chat state is session-bound in memory or Redis.
+- Chat state is session-bound in memory or database.
 - Do not generate rigid decision trees.
+- Support multi-channel: WhatsApp, Web, Farcaster
 
-## 🧠 NLU Routing
+## 🧠 AI Agent Routing
 
-- Wit.ai classifies user messages into intents.
-- Each intent maps to a service agent (e.g. `wallet_fund`, `search_vendor`).
-- Always include fallback support (`unknown`, `clarify`).
+- OpenAI GPT-4o-mini classifies user messages into intents.
+- Each intent maps to a backend tool (e.g. `create_escrow`, `search_vendors`).
+- Always include fallback support for unknown intents.
 
 ## 🧾 Wallet Identity
 
 - Every user must have a custodial wallet.
 - Wallet is created on onboarding (even on WhatsApp).
-- Email is the primary binding key (Google preferred).
+- Email is the primary binding key (Google preferred for OAuth).
+- Private keys encrypted and stored in MongoDB.
 
 ## 🚫 Do Not
 
-- Do not use the term “ZapGenie” or “Conlink.”
 - Do not generate UIs that depend on modals.
 - Do not bind data structures to UI state.
+- Do not hardcode API keys or private keys.
 
 ## ✅ Always
 
-- Prefer Rust for logic-heavy code.
-- Use Docker & `.env.local` for reproducibility.
+- Use TypeScript for all application code.
+- Use Solidity for smart contracts on Base network.
+- Use `.env.local` for environment variables.
 - Keep flows testable without UI.
+- Follow existing code structure and patterns.
+- Maintain brand consistency per `docs/BRAND.md`
 
-// Linka Project Rules — for use with Cursor IDE & Claude
+## 📱 Multi-Channel Support
 
-## 🛠️ Development Style
+- **WhatsApp (WaSender)**: Webhook-based messaging via `app/api/webhook/whatsapp/route.ts`
+- **Web**: Next.js frontend with chat interface
+- **Farcaster**: MiniKit integration with manifest configuration
+- All channels use the same AI agent and backend services
 
-- Do not generate boilerplate unless asked.
-- Use concise, production-level Rust and TypeScript code.
-- Prefer modular crates and shared services.
-- Do not write full UI component trees unless explicitly requested.
+## 🔗 Blockchain Integration
 
-## 🧩 Code Structure
+- Network: Base (Base Sepolia testnet / Base mainnet)
+- Smart Contracts: EscrowManager, PaymentProcessor, ReputationRegistry, DisputeResolution
+- All transactions recorded on Base blockchain
+- Use Ethers.js v6 for all contract interactions
 
-- Rust backends live in `zapgenie-core/`
-- TypeScript adapters live in `zapgenie-adapter/`
-- Agent logic is split by intent class:
-  - `wallet.rs`, `calendar.rs`, `vendor.rs`, etc.
-- All services in `/services/` must be swappable.
-- MCP client usage must be abstracted (`/libs/ramp_core`).
+## 🧪 Testing & Quality
 
-## 🌐 External Service Handling
-
-- Bread.africa should be accessed via MCP if available.
-- Wasender API must not store phone data locally.
-- All third-party integrations go through adapters.
-
-## 💬 Conversational Flow
-
-- UX must be chat-native: messages come first, UI is optional.
-- Chat state is session-bound in memory or Redis.
-- Do not generate rigid decision trees.
-
-## 🧠 NLU Routing
-
-- Wit.ai classifies user messages into intents.
-- Each intent maps to a service agent (e.g. `wallet_fund`, `search_vendor`).
-- Always include fallback support (`unknown`, `clarify`).
-
-## 🧾 Wallet Identity
-
-- Every user must have a custodial wallet.
-- Wallet is created on onboarding (even on WhatsApp).
-- Email is the primary binding key (Google preferred).
-
-## 🚫 Do Not
-
-- Do not use the term “ZapGenie” or “Conlink.”
-- Do not generate UIs that depend on modals.
-- Do not bind data structures to UI state.
-
-## ✅ Always
-
-- Prefer Rust for logic-heavy code.
-- Use Docker & `.env.local` for reproducibility.
-- Keep flows testable without UI.
-
+- Write tests for critical business logic
+- Use TypeScript for type safety
+- Follow existing linting rules
+- Test multi-channel flows separately

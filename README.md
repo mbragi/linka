@@ -10,26 +10,29 @@
 
 ```
 linka/
-├── apps/                   # Frontend applications
-│   └── mini-app/          # ✅ OpenAI-powered mini-app with webhooks
-│
-└── docs/                  # Documentation
-    ├── ARCHITECTURE.md
-    ├── BRAND.md
-    ├── ONBOARDING.md
-    └── PRD.md
+├── apps/
+│   ├── backend/          # Node.js/Express backend service
+│   ├── contracts/         # Solidity smart contracts for Base
+│   └── mini-app/         # Next.js universal app (Web + Farcaster + WaSender webhooks)
+├── docs/                  # Documentation
+│   ├── assets/           # Architecture diagrams (Mermaid)
+│   ├── ARCHITECTURE.md
+│   ├── BRAND.md
+│   ├── ONBOARDING.md
+│   └── PRD.md
+└── docker-compose.yml
 ```
-
-**Legend**: ✅ Complete | 🚧 To be implemented
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ (for TypeScript apps)
-- Rust 1.70+ (for backend services)
-- MongoDB (for data persistence)
+
+- Node.js 18+
+- MongoDB 5+
+- Redis (optional, for queue management)
+- Hardhat (for smart contract deployment)
 
 ### Installation
 
@@ -38,45 +41,108 @@ linka/
 git clone <your-repo-url>
 cd linka
 
-# Install all dependencies
+# Install dependencies
 npm install
 
-# Run the mini app
-npm run dev:mini-app
+# Install contract dependencies
+cd apps/contracts
+npm install
+```
+
+### Environment Setup
+
+1. Copy environment files:
+```bash
+cp apps/backend/env.example apps/backend/.env
+cp apps/mini-app/env.example apps/mini-app/.env
+cp apps/contracts/env.example apps/contracts/.env
+```
+
+2. Configure environment variables (see [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md))
+
+3. Start services:
+```bash
+# Start backend service
+cd apps/backend
+npm run dev
+
+# Start mini-app
+cd apps/mini-app
+npm run dev
 ```
 
 ### Available Commands
 
+**Root:**
 ```bash
-npm run dev              # Run  mini app
-npm run build            # Build mini app
-npm run start            # Start production server
-npm run lint             # Lint code
-npm run build            # Build AgentKit packages
-npm run clean            # Clean all node_modules
+npm run dev                  # Run mini app
+npm run build                # Build all apps
+npm run lint                 # Lint code
+```
+
+**Backend:**
+```bash
+cd apps/backend
+npm run dev                  # Run backend service
+npm run build                # Build backend
+npm run start                # Run production server
+```
+
+**Mini App:**
+```bash
+cd apps/mini-app
+npm run dev                  # Run Next.js dev server
+npm run build                # Build for production
+npm run start                # Start production server
+```
+
+**Contracts:**
+```bash
+cd apps/contracts
+npm run compile              # Compile contracts
+npm run test                 # Run tests
+npm run deploy:sepolia       # Deploy to Base Sepolia testnet
+npm run deploy:mainnet       # Deploy to Base mainnet
 ```
 
 ---
 
 ## 📱 Applications
 
-### Mini App (OpenAI + Mini Apps)
-The conversational marketplace is **complete and ready for deployment**:
+### Mini App (Next.js Universal App)
 
-- ✅ OpenAI-powered conversational AI
-- ✅ Mini App sharing and preview cards
-- ✅ WhatsApp integration via WaSender webhooks
-- ✅ Farcaster MiniKit integration
-- ✅ Embedded Mini Apps: Vendors, Marketplace, Wallet
-- ✅ Wallet management and token transfers
-- ✅ Multi-channel support (Web, WhatsApp, Farcaster)
-- ✅ Backend tool integration (vendor search, wallet balance)
-- ✅ Direct webhook endpoints for external integrations
+The conversational marketplace supports three channels:
+
+- ✅ **Web**: Full chat interface with wallet management
+- ✅ **Farcaster Mini App**: MiniKit integration for Farcaster cast embeds
+- ✅ **WhatsApp (WaSender)**: Webhook-based messaging integration
+
+**Features:**
+- OpenAI-powered conversational AI (GPT-4o-mini)
+- Multi-channel support (Web, WhatsApp, Farcaster)
+- Wallet management and balance checking
+- Vendor discovery and search
+- Escrow creation and payment processing
+- Backend tool integration for onchain operations
 
 **Deploy**: See [apps/mini-app/DEPLOYMENT.md](apps/mini-app/DEPLOYMENT.md)
 
-### Web App
-Full-featured marketplace with advanced vendor management (coming soon)
+### Backend Service
+
+Unified Node.js/Express backend handling all blockchain operations:
+
+- ✅ Identity and wallet management
+- ✅ Escrow creation, funding, and release
+- ✅ Reputation score management
+- ✅ Dispute resolution workflows
+- ✅ Transaction history and status
+- ✅ Vendor search and discovery
+
+**Smart Contracts:**
+- **EscrowManager**: Handles buyer-seller escrow with milestone releases
+- **PaymentProcessor**: Processes payments and fee distribution
+- **ReputationRegistry**: On-chain reputation scores tied to email/wallet
+- **DisputeResolution**: Multi-sig dispute resolution with arbitrator role
 
 ---
 
@@ -97,69 +163,59 @@ Full-featured marketplace with advanced vendor management (coming soon)
 
 ## 🏛️ Architecture
 
-### Multi-Channel Support
-- **Farcaster**: Mini app with MiniKit integration
-- **WhatsApp**: Via WaSender API
-- **Web**: Direct browser access
+### Dual-Channel Architecture
 
-### Backend Services (Rust)
-- **Wallet Core**: Custodial wallet management, identity, calendar
-- **Vendor Service**: Discovery, listings, ratings, MongoDB-backed
-- **Bread Proxy**: Fiat on-ramp via Bread.africa (with fallbacks)
+**Farcaster Mini App:**
+- Web-based interface with MiniKit integration
+- Embedded in Farcaster casts
+- Direct access to blockchain operations
 
-### Shared Libraries
-- **Rust**: AI core, wallet utilities, messaging schemas, DB helpers
-- **TypeScript**: UI components, shared types, utilities
+**WhatsApp (WaSender):**
+- Webhook-based message handling
+- Conversational AI processing
+- Phone number-based session management
 
-### Design Principles
-- 🧩 **Modular**: Swappable services and providers
-- 💬 **Chat-Native**: Messages first, UI optional
-- 🔄 **Composable**: MCP client support for third-party integrations
-- 🛡️ **Resilient**: Fallback mechanisms for critical services
+### AI Agent Flow
 
----
-
-## 🔧 Development
-
-### Quick Start
-```bash
-# Install dependencies
-npm install
-
-# Run mini-app locally (OpenAI + Mini Apps + Webhooks)
-npm run dev:mini-app
+```
+User Message → OpenAI GPT-4o-mini → Intent Detection → Backend Tool Execution → Onchain Transaction → Response
 ```
 
-# Run script in specific workspace
-npm run dev --workspace=apps/mini-app
-```
+### Backend Services
 
-### Building Services
+- **WalletService**: Custodial wallet management
+- **EscrowService**: Blockchain escrow operations
+- **PaymentService**: Payment processing
+- **ReputationService**: On-chain reputation management
+- **DisputeService**: Dispute resolution workflows
+- **IdentityService**: User profile management
 
-#### TypeScript Apps
-```bash
-cd apps/mini-app
-npm run build
-```
+### Blockchain Integration
 
-#### Rust Services
-```bash
-cd services/wallet-core
-cargo build --release
-```
+- **Network**: Base (Base Sepolia testnet / Base mainnet)
+- **Smart Contracts**: EscrowManager, PaymentProcessor, ReputationRegistry, DisputeResolution
+- **Provider**: Ethers.js v6
+- **Accounts**: Managed private keys (encrypted in database)
 
 ---
 
 ## 📚 Documentation
 
 - [**ARCHITECTURE.md**](docs/ARCHITECTURE.md) - System design and service contracts
-- [**BRAND.md**](docs/BRAND.md) - Visual identity and design guidelines
 - [**PRD.md**](docs/PRD.md) - Product requirements and user flows
+- [**BRAND.md**](docs/BRAND.md) - Visual identity and design guidelines
 - [**ONBOARDING.md**](docs/ONBOARDING.md) - User onboarding process
+- [**apps/README.md**](apps/README.md) - Application-level documentation
 
 ---
 
 ## 🚢 Deployment
+
+### Backend Service
+```bash
+cd apps/backend
+docker-compose up -d
+```
 
 ### Mini App (Vercel)
 ```bash
@@ -167,9 +223,10 @@ cd apps/mini-app
 npx vercel --prod
 ```
 
-### Backend Services (Docker)
+### Smart Contracts
 ```bash
-docker-compose up -d
+cd apps/contracts
+npm run deploy:mainnet
 ```
 
 ---
@@ -180,8 +237,9 @@ docker-compose up -d
 # Test TypeScript workspaces
 npm run test --workspaces
 
-# Test Rust workspaces
-cargo test --workspace
+# Test contracts
+cd apps/contracts
+npm run test
 ```
 
 ---
@@ -189,7 +247,7 @@ cargo test --workspace
 ## 🤝 Contributing
 
 1. Follow the existing code structure
-2. Use TypeScript for frontend/adapter, Rust for backend services
+2. Use TypeScript for frontend/adapter, Solidity for smart contracts
 3. Maintain brand consistency per `docs/BRAND.md`
 4. Keep chat UX as the primary interaction model
 5. Write tests for new features
