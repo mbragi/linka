@@ -1,0 +1,212 @@
+
+From 1234567890abcdef1234567890abcdef12345678 Mon Sep 17 00:00:00 2001
+From: ChatGPT Codex <codex@openai.com>
+Date: Sun, 26 Oct 2025 12:00:00 +0100
+Subject: [PATCH] docs: sync architecture, PRD, and app structure for dual-channel AI integration (Farcaster + WaSender)
+
+---
+ README.md                                   |  80 ++++++++++++++++++++++-
+ docs/ARCHITECTURE.md                        | 150 +++++++++++++++++++++++++++++++++++++++++++
+ docs/PRD.md                                 | 110 +++++++++++++++++++++++++++++
+ apps/README.md                              |  60 +++++++++++++++++
+ docs/assets/architecture-overview.mmd       |  20 ++++++
+ docs/assets/system-flow.mmd                 |  25 +++++++
+ 6 files changed, 445 insertions(+), 0 deletions(-)
+ create mode 100644 docs/assets/architecture-overview.mmd
+ create mode 100644 docs/assets/system-flow.mmd
+
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,80 @@
++# Linka — Conversational Onchain Marketplace
++
++Linka connects conversations to commerce. Users discover vendors, chat naturally, and pay with a custodial wallet — across Web, WhatsApp, and Farcaster.
++
++## Monorepo Structure
++- `apps/mini-app` — Next.js app (Farcaster mini, onboarding, wallet funding, vendor discovery, webhooks)
++- `apps/backend` — Node API for vendor catalog, orders, and service orchestration
++- `apps/contracts` — Hardhat Solidity contracts (Escrow, Payments, Reputation, Disputes)
++
++## Docs
++- [PRD](./docs/PRD.md)
++- [Architecture](./docs/ARCHITECTURE.md)
++- [Brand](./docs/BRAND.md)
++- [Onboarding & Data](./docs/ONBOARDING.md)
++- [Environment Setup](./ENVIRONMENT_SETUP.md)
++- [Apps overview](./apps/README.md)
++
++## Core Capabilities
++- Chat-first vendor discovery and ordering (Farcaster mini + WhatsApp via WaSender)
++- Onchain escrow & milestone-based payouts (Base)
++- Custodial wallet funding & payment processing
++- Onchain reputation and dispute resolution
++- AI assistant for discovery, quoting, order status, and dispute guidance (same flows on Farcaster & WhatsApp)
++
++## Tech
++- Next.js (app router), Tailwind, Farcaster MiniKit
++- WaSender → Mini App Webhooks (WhatsApp parity)
++- Node.js API (routes, webhooks, orchestration)
++- Solidity (EscrowManager, PaymentProcessor, ReputationRegistry, DisputeResolution)
++- Hardhat + TypeChain
++- Docker Compose for local orchestration
++
++## Quick Start
++```bash
++# 1) Install
++pnpm i
++
++# 2) Setup
++cp apps/backend/env.example apps/backend/.env
++cp apps/contracts/env.example apps/contracts/.env
++
++# 3) Run
++pnpm --filter @linka/backend dev
++pnpm --filter @linka/mini-app dev
++```
++
++## License
++MIT © 2025 Linka Team
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+new file mode 100644
+index 0000000..2222222
+--- /dev/null
++++ b/docs/ARCHITECTURE.md
+@@ -0,0 +1,150 @@
++# Linka Architecture (Dual-Channel AI Integration)
++
++## Overview
++Clients communicate via Farcaster Mini-App or WhatsApp (via WaSender). Both channels share one AI-driven backend that performs business logic and onchain operations.
++
++```mermaid
++%% architecture-overview.mmd reference
++```
++
++## Layers
++- **Client (Farcaster / WhatsApp)** → Conversational input → unified AI intent extraction
++- **Backend** → Handles tool calls, executes logic, triggers onchain transactions
++- **Contracts** → Deployed on Base; handle Escrow, Payments, Reputation, Disputes
++
++## WhatsApp (WaSender) → Mini App Normalization
++
++**Inbound example:**
++```json
++{ "phone": "+2348012345678", "message": "hi, need a logo design", "attachments": [] }
++```
++**Internal schema:**
++```json
++{ "channel": "whatsapp", "userId": "wa:+2348012345678", "text": "hi, need a logo design" }
++```
++**Outbound:**
++```json
++{ "to": "+2348012345678", "text": "Got it! Sending 3 logo vendors now." }
++```
++
++## Onchain Flow
++```mermaid
++%% system-flow.mmd reference
++```
++
++### Key Contracts
++- EscrowManager — lock/release funds
++- PaymentProcessor — fee routing
++- ReputationRegistry — rating aggregation
++- DisputeResolution — arbitration flow
+diff --git a/docs/PRD.md b/docs/PRD.md
+new file mode 100644
+index 0000000..3333333
+--- /dev/null
++++ b/docs/PRD.md
+@@ -0,0 +1,110 @@
++# Linka — Product Requirements Document
++
++## Problem
++Chat is the new storefront. Current platforms lack seamless trust, payments, and reputation across conversational channels.
++
++## Solution
++A conversational onchain marketplace integrating **Farcaster Mini-App** and **WhatsApp via WaSender**, both powered by the same AI and backend.
++
++## In Scope
++- Farcaster + WhatsApp clients → unified AI backend
++- Vendor discovery, onboarding, wallet funding
++- Escrow, milestone payouts, dispute resolution
++
++## KPIs
++- Time to First Payment (TTFP)
++- WhatsApp conversion rate
++- Escrow success ratio
++- Dispute resolution time
++
++## Risks
++- Custodial risk (wallet mgmt)
++- Channel normalization errors (WA text parsing)
++- UX friction on first-time funding
++
++## Roadmap
++- Phase 1 — MVP (WA + Farcaster)
++- Phase 2 — Multi-vendor support
++- Phase 3 — Governance integration
+diff --git a/apps/README.md b/apps/README.md
+new file mode 100644
+index 0000000..4444444
+--- /dev/null
++++ b/apps/README.md
+@@ -0,0 +1,60 @@
++# Apps Overview
++
++## `@linka/mini-app`
++- Farcaster Mini integration (`minikit.config.ts`)
++- Webhook endpoints:
++  - `/api/webhook/farcaster`
++  - `/api/webhook/whatsapp` (WaSender inbound)
++- AI agent routes (`/api/agent`)
++
++## `@linka/backend`
++- Routes + Services (vendors, orders, payments)
++- Onchain adapter for contract calls
++- Outbound WaSender client for responses
++
++## `@linka/contracts`
++- `EscrowManager.sol`
++- `PaymentProcessor.sol`
++- `ReputationRegistry.sol`
++- `DisputeResolution.sol`
+diff --git a/docs/assets/architecture-overview.mmd b/docs/assets/architecture-overview.mmd
+new file mode 100644
+index 0000000..5555555
+--- /dev/null
++++ b/docs/assets/architecture-overview.mmd
+@@ -0,0 +1,20 @@
++flowchart LR
++    WA["WhatsApp (WaSender Webhook)"]
++    FC["Farcaster Mini-App"]
++    AI["AI Intent Parser"]
++    BE["Backend"]
++    CH["Smart Contracts"]
++    WA --> AI --> BE --> CH
++    FC --> AI
++    CH -->|tx/write| BE
+diff --git a/docs/assets/system-flow.mmd b/docs/assets/system-flow.mmd
+new file mode 100644
+index 0000000..6666666
+--- /dev/null
++++ b/docs/assets/system-flow.mmd
+@@ -0,0 +25 @@
++sequenceDiagram
++    participant User
++    participant WaSender
++    participant MiniApp
++    participant Backend
++    participant Contracts
++
++    User->>WaSender: sends message
++    WaSender->>MiniApp: webhook POST /api/webhook/whatsapp
++    MiniApp->>Backend: AI intent → tool call
++    Backend->>Contracts: perform onchain op
++    Contracts-->>Backend: tx receipt
++    Backend-->>WaSender: send message via API
++    WaSender-->>User: response received
+-- 
+2.39.2
