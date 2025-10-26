@@ -625,7 +625,7 @@ This metric captures our core value proposition: we succeed when users successfu
 
 ### Core Team Required
 
-**Founder/CEO** (Gar Manji Michael - current)
+**Founder/CEO** (Samson McCarthy / Gar Manji Michael - current)
 - **Responsibilities**: Vision, fundraising, partnerships, product direction
 - **Key Skills**: Strategic thinking, network building, fundraising experience
 - **Time Commitment**: Full-time
