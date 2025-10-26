@@ -15,7 +15,6 @@ Linka is a conversational marketplace that enables users to discover vendors, ch
 **Target Users**:
 - **Buyers**: Users seeking products and services with onchain payment options
 - **Vendors**: Small businesses and freelancers accepting crypto payments
-- **Farcaster Users**: Crypto-native users in the Farcaster community
 
 ---
 
@@ -29,7 +28,6 @@ Linka is a conversational marketplace that enables users to discover vendors, ch
 - GDPR-compliant consent for data collection
 - Minimal UI (maximum 2 screens)
 - Google account integration (optional)
-- ECN/Base name for unique identification
 
 **Flow**:
 1. User discovers Linka through any channel (WhatsApp, Web, Farcaster)
