@@ -1,18 +1,25 @@
+```mermaid
 graph TB
     subgraph "User Channels"
         WA[WhatsApp<br/>WaSender]
-        WEB[Web Interface<br/>Next.js]
+        WEB[Web Interface<br/>Next.js<br/>Anonymous-First]
         FC[Farcaster<br/>Mini App]
     end
 
     subgraph "AI Agent Layer"
-        AGENT[OpenAI GPT-4o-mini<br/>Conversational AI]
-        TOOLS[Tool Integration<br/>Backend Services]
+        AGENT[OpenAI GPT-4o-mini<br/>Auth-Enforced]
+        AUTH_CHECK{Auth Check}
+        TOOLS[Tool Integration]
+    end
+
+    subgraph "Authentication"
+        AUTH[Sign In/Sign Up<br/>Email + Password]
+        USER[User Identity<br/>username.linka]
     end
 
     subgraph "Backend Service"
         API[Express API<br/>Port 4000]
-        DB[(MongoDB<br/>User Data)]
+        DB[(MongoDB<br/>Password Hash Encryption)]
         RQ[Redis<br/>Queues]
         
         subgraph "Services"
@@ -20,8 +27,8 @@ graph TB
             PS[PaymentService]
             RS[ReputationService]
             DS[DisputeService]
-            WS[WalletService]
-            IS[IdentityService]
+            WS[WalletService<br/>Password-Based<br/>Encryption]
+            IS[IdentityService<br/>Bcrypt Auth]
         end
     end
 
@@ -36,7 +43,12 @@ graph TB
     WEB --> AGENT
     FC --> AGENT
 
-    AGENT --> TOOLS
+    AGENT --> AUTH_CHECK
+    AUTH_CHECK -->|Authenticated| TOOLS
+    AUTH_CHECK -->|Anonymous| AUTH
+    AUTH --> USER
+    USER --> DB
+
     TOOLS --> API
 
     API --> ES
@@ -53,13 +65,16 @@ graph TB
     PS --> PP
     RS --> RR
     DS --> DR
-
-    ES --> EM
-    DS --> EM
+    WS --> EM
 
     style AGENT fill:#10B981
+    style AUTH fill:#FFB800
+    style USER fill:#DFF5FF
+    style WS fill:#10B981,color:#fff
+    style IS fill:#10B981,color:#fff
     style EM fill:#1B1B1E,color:#DFF5FF
     style PP fill:#1B1B1E,color:#DFF5FF
     style RR fill:#1B1B1E,color:#DFF5FF
     style DR fill:#1B1B1E,color:#DFF5FF
+```
 

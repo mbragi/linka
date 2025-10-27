@@ -5,6 +5,7 @@ import { asyncHandler } from '../middleware';
 import { ApiResponse } from '../types';
 import { WalletService } from '../services/WalletService';
 import { ethers } from 'ethers';
+import bcrypt from 'bcryptjs';
 
 export class IdentityController {
   private static walletService = new WalletService();
@@ -33,22 +34,36 @@ export class IdentityController {
   }
 
   static createUser = asyncHandler(async (req: Request, res: Response) => {
-    const { email, profile, consentGiven, googleId, phoneNumber, baseName, ensName } = req.body;
+    const { email, username, password, profile, consentGiven, googleId, phoneNumber, baseName, ensName } = req.body;
     
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    // Check if user already exists by email
+    const existingUserByEmail = await User.findOne({ email });
+    if (existingUserByEmail) {
       return res.status(400).json({ 
         success: false,
-        error: 'User already exists' 
+        error: 'User with this email already exists' 
       });
     }
 
-    // Create wallet
-    const { address: walletAddress, encryptedPrivateKey } = await IdentityController.walletService.createWallet();
+    // Check if username already exists
+    const existingUserByUsername = await User.findOne({ username });
+    if (existingUserByUsername) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Username already taken' 
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create wallet with password-based encryption
+    const { address: walletAddress, encryptedPrivateKey } = await IdentityController.walletService.createWallet(hashedPassword);
 
     const user = new User({
       email,
+      username,
+      password: hashedPassword,
       walletAddress,
       encryptedPrivateKey,
       consentGiven: consentGiven || false,
@@ -75,6 +90,7 @@ export class IdentityController {
       message: 'User created successfully',
       data: {
         email: user.email,
+        username: user.username,
         walletAddress: user.walletAddress,
         profile: user.profile,
         onboardingCompleted: user.onboardingCompleted
@@ -82,6 +98,40 @@ export class IdentityController {
     };
     
     res.status(201).json(response);
+  });
+
+  static signIn = asyncHandler(async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+    
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password'
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password'
+      });
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Sign in successful',
+      data: {
+        email: user.email,
+        username: user.username,
+        walletAddress: user.walletAddress,
+        profile: user.profile,
+        onboardingCompleted: user.onboardingCompleted
+      }
+    };
+
+    res.status(200).json(response);
   });
 
   static getUser = asyncHandler(async (req: Request, res: Response) => {
@@ -176,7 +226,8 @@ export class IdentityController {
 
     try {
       const provider = IdentityController.initializeProvider();
-      const balance = await IdentityController.walletService.getWalletBalance(user.encryptedPrivateKey, provider || undefined);
+      // Use stored password hash for decryption
+      const balance = await IdentityController.walletService.getWalletBalance(user.encryptedPrivateKey, user.password, provider || undefined);
 
       // Get network information
       let networkInfo = { name: 'Base Sepolia', chainId: 84532 };
@@ -265,22 +316,36 @@ export class IdentityController {
   });
 
   static createVendor = asyncHandler(async (req: Request, res: Response) => {
-    const { email, profile, consentGiven, googleId, phoneNumber, baseName, ensName } = req.body;
+    const { email, username, password, profile, consentGiven, googleId, phoneNumber, baseName, ensName } = req.body;
     
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    // Check if user already exists by email
+    const existingUserByEmail = await User.findOne({ email });
+    if (existingUserByEmail) {
       return res.status(400).json({ 
         success: false,
-        error: 'User already exists' 
+        error: 'User with this email already exists' 
       });
     }
 
-    // Create wallet
-    const { address: walletAddress, encryptedPrivateKey } = await IdentityController.walletService.createWallet();
+    // Check if username already exists
+    const existingUserByUsername = await User.findOne({ username });
+    if (existingUserByUsername) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Username already taken' 
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create wallet with password-based encryption
+    const { address: walletAddress, encryptedPrivateKey } = await IdentityController.walletService.createWallet(hashedPassword);
 
     const user = new User({
       email,
+      username,
+      password: hashedPassword,
       walletAddress,
       encryptedPrivateKey,
       consentGiven: consentGiven || false,
@@ -307,6 +372,7 @@ export class IdentityController {
       message: 'Vendor created successfully',
       data: {
         email: user.email,
+        username: user.username,
         walletAddress: user.walletAddress,
         profile: user.profile,
         onboardingCompleted: user.onboardingCompleted

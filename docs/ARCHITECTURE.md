@@ -2,7 +2,9 @@
 
 ## System Overview
 
-Linka is a conversational marketplace powered by OpenAI GPT-4o-mini, providing multi-channel AI agents that interface users with vendors, payments, and blockchain services via WhatsApp (WaSender), Web chat, and Farcaster Mini Apps. The system emphasizes composability, fallback resiliency, and seamless Base blockchain integration.
+Linka is a conversational marketplace powered by OpenAI GPT-4o-mini, providing multi-channel AI agents that interface users with vendors, payments, and blockchain services via WhatsApp (WaSender), Web chat, and Farcaster Mini Apps. The system emphasizes anonymity-first access, composability, fallback resiliency, and seamless Base blockchain integration.
+
+**Anonymous-First Architecture**: Users can browse vendors without authentication, but must sign in to make purchases, manage wallets, or become vendors. Email is the primary identifier, with username.linka identity for user profiles.
 
 ![Architecture Overview](assets/architecture-overview.mmd)
 

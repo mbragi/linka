@@ -14,16 +14,17 @@ export class WalletService {
 
   /**
    * Create a new wallet with encrypted private key storage
+   * Uses password hash as additional encryption layer
    */
-  async createWallet(): Promise<{ address: string; encryptedPrivateKey: string }> {
+  async createWallet(passwordHash: string): Promise<{ address: string; encryptedPrivateKey: string }> {
     try {
       // Generate new wallet
       const wallet = ethers.Wallet.createRandom();
       const privateKey = wallet.privateKey;
       const address = wallet.address;
 
-      // Encrypt private key
-      const encryptedPrivateKey = this.encryptPrivateKey(privateKey);
+      // Encrypt private key with password hash
+      const encryptedPrivateKey = this.encryptPrivateKey(privateKey, passwordHash);
 
       logger.info(`Created new wallet: ${address}`);
 
@@ -39,11 +40,18 @@ export class WalletService {
 
   /**
    * Decrypt private key for wallet operations
+   * Requires password hash for decryption (two-factor encryption)
    */
-  decryptPrivateKey(encryptedPrivateKey: string): string {
+  decryptPrivateKey(encryptedPrivateKey: string, passwordHash: string): string {
     try {
       const algorithm = 'aes-256-cbc';
-      const key = crypto.scryptSync(this.encryptionKey, 'salt', 32);
+      
+      // Combine master key and password hash for enhanced security
+      const combinedKey = crypto.createHash('sha256')
+        .update(this.encryptionKey + passwordHash)
+        .digest('hex');
+      
+      const key = crypto.scryptSync(combinedKey, 'salt', 32);
       
       // Split the encrypted data
       const parts = encryptedPrivateKey.split(':');
@@ -69,11 +77,18 @@ export class WalletService {
 
   /**
    * Encrypt private key for secure storage
+   * Uses password hash as additional encryption factor
    */
-  private encryptPrivateKey(privateKey: string): string {
+  private encryptPrivateKey(privateKey: string, passwordHash: string): string {
     try {
       const algorithm = 'aes-256-cbc';
-      const key = crypto.scryptSync(this.encryptionKey, 'salt', 32);
+      
+      // Combine master key and password hash for enhanced security
+      const combinedKey = crypto.createHash('sha256')
+        .update(this.encryptionKey + passwordHash)
+        .digest('hex');
+      
+      const key = crypto.scryptSync(combinedKey, 'salt', 32);
       const iv = crypto.randomBytes(16);
 
       const cipher = crypto.createCipheriv(algorithm, key, iv);
@@ -91,23 +106,25 @@ export class WalletService {
 
   /**
    * Get wallet instance from encrypted private key
+   * Requires password hash for decryption
    */
-  getWallet(encryptedPrivateKey: string): ethers.Wallet {
+  getWallet(encryptedPrivateKey: string, passwordHash: string): ethers.Wallet {
     try {
-      const privateKey = this.decryptPrivateKey(encryptedPrivateKey);
+      const privateKey = this.decryptPrivateKey(encryptedPrivateKey, passwordHash);
       return new ethers.Wallet(privateKey);
     } catch (error) {
       logger.error('Error getting wallet:', error);
-      throw new Error('Failed to get wallet');
+      throw new Error('Failed to get wallet - invalid password or corrupted key');
     }
   }
 
   /**
    * Get wallet balance with fallback handling
+   * Requires password hash for decryption
    */
-  async getWalletBalance(encryptedPrivateKey: string, provider?: ethers.Provider): Promise<string> {
+  async getWalletBalance(encryptedPrivateKey: string, passwordHash: string, provider?: ethers.Provider): Promise<string> {
     try {
-      const wallet = this.getWallet(encryptedPrivateKey);
+      const wallet = this.getWallet(encryptedPrivateKey, passwordHash);
       
       // Try to get balance from provider
       if (provider) {
@@ -119,17 +136,7 @@ export class WalletService {
         }
       }
       
-      // Fallback: try to create a new provider
-      const rpcUrl = process.env.BASE_RPC_URL;
-      if (rpcUrl) {
-        try {
-          const rpcProvider = new ethers.JsonRpcProvider(rpcUrl);
-          const balance = await rpcProvider.getBalance(wallet.address);
-          return ethers.formatEther(balance);
-        } catch (rpcError) {
-          logger.warn('RPC provider failed, using fallback balance:', rpcError);
-        }
-      }
+
       
       // Final fallback: return 0 balance
       logger.warn(`Using fallback balance for wallet ${wallet.address}`);

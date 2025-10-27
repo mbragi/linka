@@ -22,22 +22,33 @@ Linka is a conversational marketplace that enables users to discover vendors, ch
 
 ### 1. Onboarding Flow
 
+#### Anonymous-First Approach
+
+**Key Principle**: All users are anonymous by default. They can browse vendors without signing in. Authentication is required for:
+- Making purchases (escrow creation)
+- Wallet management operations
+- Becoming a vendor
+- Transaction history access
+
 #### Pre-Onboarding: Data Collection & Consent
 
 **Requirements**:
 - GDPR-compliant consent for data collection
-- Minimal UI (maximum 2 screens)
+- Username.linka identity for all users
+- Email as primary identifier
+- Password for custodial security
 - Google account integration (optional)
 
 **Flow**:
 1. User discovers Linka through any channel (WhatsApp, Web, Farcaster)
-2. AI agent initiates conversation: "Welcome to Linka! Let's get you started."
-3. Data collection prompts:
-   - "I'll need your email and name for your account."
+2. Anonymous home screen shown with quick links: Find Vendors, Become a Vendor, Sign In
+3. User can browse vendors without signing in
+4. When user attempts to make a purchase or access wallet: AI prompts sign-in
+5. Data collection prompts:
+   - Email, username (johndoe → johndoe.linka), password, name
    - "Would you like to connect your Google account? (optional)"
-   - "Do you have a Base name or ENS name for your onchain identity?"
-4. User provides consent: "I consent to data collection and storage."
-5. AI confirms: "Great! Your data is secure and encrypted."
+6. User provides consent: "I consent to data collection and storage."
+7. AI confirms: "Great! Your data is secure and encrypted."
 
 #### Wallet Creation & Funding
 
@@ -71,7 +82,8 @@ Linka is a conversational marketplace that enables users to discover vendors, ch
 5. User: "Show me Vendor A's profile"
 6. AI displays vendor profile (bio, categories, ratings, completed transactions)
 7. User: "I want to buy a laptop for 2 ETH"
-8. AI initiates escrow creation
+8. **If user is not authenticated**: AI prompts: "To make a purchase, please sign in first."
+9. **If user is authenticated**: AI initiates escrow creation
 
 ### 3. Transaction Flow
 

@@ -8,11 +8,19 @@ This document outlines the complete user onboarding flow for Linka, focusing on 
 
 ## Multi-Channel Onboarding
 
+### Anonymous-First Approach
+
+**Key Principle**: All users are anonymous by default. Users can browse vendors and view information without signing in, but must authenticate to:
+- Make purchases and create escrows
+- Access wallet management
+- Become a vendor
+- Access transaction history
+
 ### Channel Support
 
 Linka supports three channels for onboarding:
 
-1. **Web Interface** - Full browser-based experience with modal-driven UI
+1. **Web Interface** - Full browser-based experience with anonymous home screen
 2. **WhatsApp (WaSender)** - Conversational onboarding via WhatsApp messaging
 3. **Farcaster Mini App** - Seamless onboarding within Farcaster cast interactions
 
@@ -69,11 +77,18 @@ Before wallet creation, Linka collects essential user data for compliance and pl
 ```typescript
 {
   email: string;                    // Primary key
+  username: string;                  // Unique username (e.g., "johndoe" displayed as "johndoe.linka")
+  password: string;                 // Bcrypt hashed password
   walletAddress: string;             // Generated wallet address
   encryptedPrivateKey: string;       // Encrypted private key
   consentGiven: boolean;             // GDPR compliance
   onboardingCompleted: boolean;      // Onboarding status
   channel: 'web' | 'whatsapp' | 'farcaster';
+  profile: {
+    name: string;
+    bio?: string;
+    isVendor: boolean;
+  };
 }
 ```
 
@@ -176,6 +191,8 @@ AI: "Send ETH to 0x123... from any wallet. I'll check your balance once funded."
 ```typescript
 {
   email: string;
+  username: string;  // Unique username (e.g., "johndoe" displayed as "johndoe.linka")
+  password: string;  // Plain text password (will be hashed with bcrypt)
   profile: {
     name: string;
     bio?: string;
@@ -186,6 +203,14 @@ AI: "Send ETH to 0x123... from any wallet. I'll check your balance once funded."
   phoneNumber?: string;
   farcasterFid?: number;
   googleId?: string;
+}
+```
+
+**Sign In** (`POST /api/identity/signin`):
+```typescript
+{
+  email: string;
+  password: string;
 }
 ```
 
@@ -230,10 +255,21 @@ Available tools:
 ### Onboarding Intent Detection
 
 **User Intent**: New user asking about signup
-**AI Response**: "I'll help you create an account. I'll need your email and name."
+**AI Response**: "I'll help you create an account. I'll need your email, username, password, and name."
 
 **User Intent**: First-time user messaging
-**AI Response**: "Welcome to Linka! I'll need your email, name, and consent to create your account."
+**AI Response**: "Welcome to Linka! You can browse vendors anonymously. If you want to make purchases, you'll need to sign up with your email, username, password, and name."
+
+**Authentication Required Actions**:
+- Making purchases (create_escrow)
+- Wallet management (get_wallet_balance, fund_wallet)
+- Transaction management (release_payment, file_dispute)
+- Becoming a vendor (create_vendor)
+
+**Anonymous User Actions**:
+- Browse vendors (search_vendors)
+- View vendor profiles
+- Get information about services
 
 ---
 

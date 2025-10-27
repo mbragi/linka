@@ -139,33 +139,52 @@ export async function POST(request: NextRequest) {
     const miniAppKey = detectMiniAppContext(message);
     
     // Create system prompt for the AI agent
+    const isAuthenticated = !!userEmail;
     const systemPrompt = `You are Linka, a conversational marketplace assistant. You help users:
 - Discover vendors and products
 - Manage their wallet and payments
 - Browse the marketplace
 - Make onchain transactions
 
-User Context: ${userEmail ? `Current user: ${userEmail}` : 'No user context available'}
+User Context: ${userEmail ? `Current user: ${userEmail} (Authenticated)` : 'No user authenticated - anonymous browsing'}
+
+IMPORTANT AUTHENTICATION RULES:
+${!isAuthenticated ? '- User is not authenticated. They can browse vendors and get information, but cannot make purchases, access wallet operations, or create escrows. Inform them they need to sign in first.' : '- User is authenticated. They can access all features including purchases, wallet management, and transactions.'}
 
 Available tools:
-- search_vendors: Search for vendors by category and reputation
-- create_escrow: Create escrow for marketplace/service transactions
-- check_reputation: Verify seller/buyer reputation before transactions
-- release_payment: Release escrowed payments to sellers
-- file_dispute: File disputes for unresolved transactions
-- get_transaction_status: Check transaction status and timeline
-- get_wallet_balance: Get user's wallet balance
-- fund_wallet: Get wallet funding information and address for the user
-- create_vendor: Create a new vendor profile
+- search_vendors: Search for vendors by category and reputation (available to all users)
+- create_escrow: Create escrow for marketplace/service transactions (REQUIRES AUTHENTICATION)
+- check_reputation: Verify seller/buyer reputation before transactions (REQUIRES AUTHENTICATION)
+- release_payment: Release escrowed payments to sellers (REQUIRES AUTHENTICATION)
+- file_dispute: File disputes for unresolved transactions (REQUIRES AUTHENTICATION)
+- get_transaction_status: Check transaction status and timeline (REQUIRES AUTHENTICATION)
+- get_wallet_balance: Get user's wallet balance (REQUIRES AUTHENTICATION)
+- fund_wallet: Get wallet funding information and address (REQUIRES AUTHENTICATION)
+- create_vendor: Create a new vendor profile (REQUIRES AUTHENTICATION)
 
 If a user asks about vendors, shopping, or marketplace, you can use the search_vendors tool.
-If a user wants to make a purchase or book a service, you can use create_escrow.
-If a user asks about their wallet or balance, you can use the get_wallet_balance tool.
-If a user wants to fund their wallet or get funding instructions, you can use the fund_wallet tool.
-If a user wants to check transaction status, use get_transaction_status.
-If a user wants to become a vendor, use create_vendor.
+${!isAuthenticated ? 'If a user wants to make a purchase, access wallet, or perform transactions, politely inform them they need to sign in first. Guide them to sign up if they are new.' : 'If a user wants to make a purchase or book a service, you can use create_escrow.'}
+If a user asks about their wallet or balance, and they are not authenticated, inform them they need to sign in.
+If a user wants to fund their wallet or get funding instructions, they must be authenticated.
+If a user wants to check transaction status, they must be authenticated.
+If a user wants to become a vendor, they must be authenticated.
 
 Be helpful, friendly, and focused on marketplace activities.`;
+
+    // Handle tool calls with authentication check
+    const callBackendToolWithAuth = async (toolName: string, params: any, userEmail?: string) => {
+      const authenticatedTools = ['create_escrow', 'release_payment', 'file_dispute', 'get_transaction_status', 
+                                  'get_wallet_balance', 'fund_wallet', 'create_vendor', 'check_reputation'];
+      
+      if (authenticatedTools.includes(toolName) && !userEmail) {
+        return {
+          error: 'AUTHENTICATION_REQUIRED',
+          message: 'You need to sign in to perform this action. Please sign in or create an account first.'
+        };
+      }
+      
+      return await callBackendTool(toolName, params, userEmail);
+    };
 
     // Call OpenAI
     const completion = await openai.chat.completions.create({
@@ -393,7 +412,7 @@ Be helpful, friendly, and focused on marketplace activities.`;
       const toolName = toolCall.function.name;
       const toolParams = JSON.parse(toolCall.function.arguments);
       
-      toolResults = await callBackendTool(toolName, toolParams, userEmail);
+      toolResults = await callBackendToolWithAuth(toolName, toolParams, userEmail);
       
       // Get follow-up response with tool results
       const followUp = await openai.chat.completions.create({

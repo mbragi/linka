@@ -2,10 +2,12 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
   email: string;
+  username: string;
+  password: string;
   farcasterFid?: number;
   walletAddress: string;
   encryptedPrivateKey: string;
-  phoneNumber?: string;
+  phoneNumber?: string; // whatsapp phone number
   googleId?: string;
   consentGiven: boolean;
   onboardingCompleted: boolean;
@@ -51,6 +53,19 @@ const UserSchema = new Schema<IUser>({
     lowercase: true,
     trim: true,
     index: true
+  },
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+    index: true,
+    match: [/^[a-z0-9_.-]+$/, 'Username can only contain lowercase letters, numbers, dots, underscores, and hyphens']
+  },
+  password: {
+    type: String,
+    required: true
   },
   farcasterFid: {
     type: Number,
@@ -189,6 +204,7 @@ const UserSchema = new Schema<IUser>({
 });
 
 // Indexes for better query performance
+UserSchema.index({ username: 1 });
 UserSchema.index({ 'profile.isVendor': 1, 'reputation.score': -1 });
 UserSchema.index({ 'profile.categories': 1 });
 UserSchema.index({ 'reputation.totalVolume': -1 });

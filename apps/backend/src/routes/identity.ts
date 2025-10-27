@@ -5,6 +5,7 @@ const router = Router();
 
 // User management routes
 router.post('/create', IdentityController.createUser);
+router.post('/signin', IdentityController.signIn);
 router.get('/:email', IdentityController.getUser);
 router.get('/:email/onboarding', IdentityController.checkOnboarding);
 router.put('/:email/onboarding', IdentityController.completeOnboarding);

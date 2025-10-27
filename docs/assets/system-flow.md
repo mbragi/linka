@@ -1,53 +1,57 @@
+```mermaid
 sequenceDiagram
-    participant U as User
-    participant C as Channel<br/>(WhatsApp/Web/Farcaster)
+    participant U as Anonymous User
+    participant C as Channel<br/>(Web/WhatsApp/Farcaster)
     participant AI as AI Agent<br/>(GPT-4o-mini)
     participant API as Backend API
-    participant DB as MongoDB
-    participant BC as Base Smart Contracts
+    participant DB as MongoDB<br/>(Password Hash)
+    participant BC as Base Blockchain
 
+    Note over U,C: Anonymous browsing enabled
     U->>C: "I want to buy from vendor X"
-    C->>AI: Forward message with context
+    C->>AI: Forward message (no auth)
     
-    AI->>AI: Analyze intent<br/>(create_escrow)
+    AI->>AI: Check authentication
+    AI->>AI: User not authenticated
+    AI-->>U: "Sign in required for purchases"
     
+    U->>C: Click "Sign In"
+    C->>API: POST /api/identity/signin
+    API->>DB: Verify email + password hash
+    DB-->>API: Return user data
+    API->>WS: Get wallet (password-based decrypt)
+    API-->>C: User authenticated<br/>username.linka ready
+    C-->>U: Welcome back!
+    
+    Note over U,BC: User authenticated ✅
+    U->>C: "Buy laptop for 2 ETH"
+    C->>AI: Forward message (authenticated)
+    
+    AI->>AI: Check auth: ✅
+    AI->>AI: Detect purchase intent
     AI->>API: POST /api/escrow/create
-    API->>DB: Create transaction record
     
-    API->>BC: createEscrow()
-    BC-->>API: Escrow ID returned
+    API->>DB: Get user + password hash
+    API->>WS: Decrypt wallet<br/>(password hash)
+    API->>DB: Store transaction
     
-    API-->>AI: Escrow created successfully
-    AI->>AI: Format response
+    API->>BC: createEscrow()<br/>with decrypted key
+    BC-->>API: Escrow ID
+    API-->>AI: Escrow created
+    AI-->>C: "Escrow created!<br/>ID: 0x123..."
+    C-->>U: Transaction pending
     
-    AI-->>C: "Escrow created!<br/>Transaction ID: 0x123..."
-    C-->>U: Display confirmation
-    
-    Note over U,BC: User funds escrow
-    
-    U->>C: "Check transaction status"
-    C->>AI: Forward request
-    AI->>API: GET /api/transactions/:id
-    API->>BC: getEscrow(escrowId)
-    BC-->>API: Escrow details
-    API->>DB: Fetch transaction metadata
-    API-->>AI: Complete transaction info
-    AI-->>C: "Transaction is funded and pending"
-    C-->>U: Display status
-    
-    Note over U,BC: Seller completes work
-    
+    Note over U,BC: Payment release flow
     U->>C: "Release payment"
-    C->>AI: Process release request
+    C->>AI: Process release
     AI->>API: POST /api/escrow/:id/release
+    
+    API->>DB: Get password hash
+    API->>WS: Decrypt wallet
     API->>BC: releasePayment()
-    BC->>RR: updateReputation(seller, +)
+    BC->>BC: updateReputation()
     BC-->>API: Payment released
-    API->>DB: Update transaction status
-    API-->>AI: Payment released
-    AI-->>C: "Payment released to seller!"
-    C-->>U: Confirmation message
-
-    style AI fill:#10B981
-    style BC fill:#1B1B1E,color:#DFF5FF
-
+    API-->>AI: Payment successful
+    AI-->>C: "Payment released!<br/>username.linka updated"
+    C-->>U: Confirmation
+```
