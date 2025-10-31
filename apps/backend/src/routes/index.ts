@@ -1,5 +1,4 @@
-import { Router } from 'express';
-import { ethers } from 'ethers';
+import express, { Router } from 'express';  
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';

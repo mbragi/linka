@@ -2,28 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Search, MapPin, Star, MessageCircle, ArrowRight, Loader2 } from 'lucide-react'
-
-interface Vendor {
-  id: string
-  email: string
-  walletAddress: string
-  profile: {
-  name: string
-    bio: string
-    categories: string[]
-  location: string
-    website?: string
-  }
-  reputation: {
-    score: number
-    totalTransactions: number
-    completedTransactions: number
-  }
-}
-
-interface VendorDiscoveryProps {
-  onClose: () => void
-}
+import { fetchVendors } from '../libs/backend'
+import type { Vendor, VendorDiscoveryProps } from '../libs/types'
 
 export default function VendorDiscovery({ onClose }: VendorDiscoveryProps) {
   const [searchQuery, setSearchQuery] = useState('')
@@ -35,22 +15,15 @@ export default function VendorDiscovery({ onClose }: VendorDiscoveryProps) {
   const categories = ['all', 'electronics', 'clothing', 'food', 'services', 'digital', 'art', 'home', 'beauty', 'sports', 'automotive']
 
   useEffect(() => {
-    fetchVendors()
+    loadVendors()
   }, [])
 
-  const fetchVendors = async () => {
+  const loadVendors = async () => {
     try {
       setIsLoading(true)
       setError('')
       
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'
-      const response = await fetch(`${backendUrl}/api/vendors`)
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch vendors')
-      }
-      
-      const data = await response.json()
+      const data = await fetchVendors()
       
       if (data.success) {
         setVendors(data.data.vendors || [])
@@ -136,7 +109,7 @@ export default function VendorDiscovery({ onClose }: VendorDiscoveryProps) {
             <div className="text-center py-8">
               <p className="text-red-600 mb-4">{error}</p>
               <button
-                onClick={fetchVendors}
+                onClick={loadVendors}
                 className="bg-linka-emerald text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
               >
                 Try Again

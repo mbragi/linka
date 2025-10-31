@@ -1,6 +1,6 @@
-# Linka Mini App Assets
+# Linka App Assets
 
-This directory contains the visual assets for the Linka mini app.
+This directory contains the visual assets for the Linka app.
 
 ## Required Assets
 

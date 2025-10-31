@@ -1,35 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Wallet, Search, ShoppingBag, ArrowRight, ChevronRight, User, LogOut } from 'lucide-react'
+import { Wallet, Search, ShoppingBag, ArrowRight, ChevronRight, User as UserIcon, LogOut } from 'lucide-react'
 import WalletFund from '../components/WalletFund'
 import VendorDiscovery from '../components/VendorDiscovery'
 import OnboardingModal from '../components/OnboardingModal'
-
-interface Message {
-  id: string
-  text: string
-  sender: 'user' | 'bot'
-  timestamp: Date
-}
-
-interface User {
-  email: string
-  name: string
-  username?: string
-  walletAddress: string
-  onboardingCompleted: boolean
-}
-
-interface WalletBalance {
-  balance: string
-  currency: string
-  walletAddress: string
-  network?: {
-    name: string
-    chainId: number
-  }
-}
+import { fetchWalletBalance } from '../libs/backend'
+import { sendAgentMessage } from '../libs/agent'
+import type { Message, User, WalletBalance } from '../libs/types'
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -61,22 +39,18 @@ export default function Home() {
         }
       ])
       setIsInitialized(true)
-      fetchWalletBalance()
+      loadWalletBalance()
     }
   }, [user, isInitialized])
 
-  const fetchWalletBalance = async () => {
+  const loadWalletBalance = async () => {
     if (!user) return
     
     try {
       console.debug('Fetching wallet balance for user:', user.email)
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'
-      console.debug('Backend URL:', backendUrl)
-      const response = await fetch(`${backendUrl}/api/identity/${user.email}/wallet/balance`)
-      const data = await response.json()
-      
-      if (data.success) {
-        setWalletBalance(data.data)
+      const balance = await fetchWalletBalance(user.email)
+      if (balance) {
+        setWalletBalance(balance)
       }
     } catch (error) {
       console.error('Error fetching wallet balance:', error)
@@ -118,7 +92,7 @@ export default function Home() {
   const anonymousQuickActions = [
     { icon: Search, label: 'Find Vendors', action: 'find-vendors' },
     { icon: ShoppingBag, label: 'Become a Vendor', action: 'become-vendor' },
-    { icon: User, label: 'Sign In', action: 'sign-in' }
+    { icon: UserIcon, label: 'Sign In', action: 'sign-in' }
   ]
 
   const handleOnboardingComplete = (userData: any) => {
@@ -130,18 +104,18 @@ export default function Home() {
       onboardingCompleted: true
     })
     setShowOnboarding(false)
-    fetchWalletBalance()
+    loadWalletBalance()
   }
 
   const handleSignIn = (email: string) => {
     setUser({
       email,
-      name: 'User', // Will be updated from API response
+      name: 'User',
       walletAddress: '',
       onboardingCompleted: true
     })
     setShowOnboarding(false)
-    fetchWalletBalance()
+    loadWalletBalance()
   }
 
   const handleSendMessage = async (text: string) => {
@@ -154,26 +128,17 @@ export default function Home() {
       timestamp: new Date()
     }
 
-    setMessages(prev => [...prev, userMessage])
-    setInputText('')
-    setIsTyping(true)
+      setMessages(prev => [...prev, userMessage])
+      setInputText('')
+      setIsTyping(true)
 
     try {
-      // Call AgentKit API with user context
-      const response = await fetch('/api/agent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: text.trim(),
-          threadId: 'web-user',
-          channel: 'web',
-          userEmail: user.email
-        }),
+      const data = await sendAgentMessage({
+        message: text.trim(),
+        threadId: 'web-user',
+        channel: 'web',
+        userEmail: user.email
       })
-
-      const data = await response.json()
 
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
@@ -457,7 +422,7 @@ export default function Home() {
             onClose={() => setShowWalletFund(false)} 
             walletAddress={user?.walletAddress}
             networkInfo={walletBalance?.network}
-            onBalanceRefresh={fetchWalletBalance}
+            onBalanceRefresh={loadWalletBalance}
           />
         )}
 

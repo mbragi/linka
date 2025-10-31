@@ -11,16 +11,16 @@ export const initializeEscrowRoutes = (escrowService: any, disputeService: any) 
 };
 
 // Escrow management routes
-router.post('/create', (req, res) => escrowController.createEscrow(req, res));
-router.post('/:escrowId/release', (req, res) => escrowController.releaseEscrow(req, res));
-router.post('/:escrowId/refund', (req, res) => escrowController.refundEscrow(req, res));
-router.post('/:escrowId/dispute', (req, res) => escrowController.disputeEscrow(req, res));
-router.get('/:escrowId', (req, res) => escrowController.getEscrow(req, res));
+router.post('/create', (req, res, next) => escrowController.createEscrow(req, res, next));
+router.post('/:escrowId/release', (req, res, next) => escrowController.releaseEscrow(req, res, next));
+router.post('/:escrowId/refund', (req, res, next) => escrowController.refundEscrow(req, res, next));
+router.post('/:escrowId/dispute', (req, res, next) => escrowController.disputeEscrow(req, res, next));
+router.get('/:escrowId', (req, res, next) => escrowController.getEscrow(req, res, next));
 
 // Dispute resolution routes
-router.post('/:escrowId/disputes/open', (req, res) => escrowController.openDispute(req, res));
-router.post('/:escrowId/disputes/evidence', (req, res) => escrowController.addEvidence(req, res));
-router.post('/:escrowId/disputes/resolve', (req, res) => escrowController.resolveDispute(req, res));
-router.get('/:escrowId/disputes', (req, res) => escrowController.getDispute(req, res));
+router.post('/:escrowId/disputes/open', (req, res, next) => escrowController.openDispute(req, res, next));
+router.post('/:escrowId/disputes/evidence', (req, res, next) => escrowController.addEvidence(req, res, next));
+router.post('/:escrowId/disputes/resolve', (req, res, next) => escrowController.resolveDispute(req, res, next));
+router.get('/:escrowId/disputes', (req, res, next) => escrowController.getDispute(req, res, next));
 
 export default router;

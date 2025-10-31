@@ -60,7 +60,6 @@ const UserSchema = new Schema<IUser>({
     unique: true,
     lowercase: true,
     trim: true,
-    index: true,
     match: [/^[a-z0-9_.-]+$/, 'Username can only contain lowercase letters, numbers, dots, underscores, and hyphens']
   },
   password: {

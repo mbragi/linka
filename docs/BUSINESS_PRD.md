@@ -640,7 +640,7 @@ This metric captures our core value proposition: we succeed when users successfu
 - **Key Skills**: Product design, user research, analytics, AI/ML products
 - **Hiring Timeline**: Month 3-4
 
-**Head of Growth**
+**Head of Growth** [Bunrinmwa Gobum](https://github.com/Traybuns)
 - **Responsibilities**: Marketing, community building, partnerships, sales
 - **Key Skills**: Growth marketing, community management, partnerships, content
 - **Hiring Timeline**: Month 4-5
@@ -759,6 +759,3 @@ Linka solves a real problem: **trust in social commerce**. We're not just anothe
 ---
 
 *For technical details, see [ARCHITECTURE.md](./ARCHITECTURE.md)*
-
-<-- *For investor pitch deck, contact: gar@linka.market*  -->
-

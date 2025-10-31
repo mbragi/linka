@@ -11,12 +11,12 @@ export const initializeTransactionRoutes = (paymentService: any, reputationServi
 };
 
 // Transaction management routes
-router.get('/:email', (req, res) => transactionController.getTransactions(req, res));
-router.get('/:email/:transactionId', (req, res) => transactionController.getTransaction(req, res));
-router.put('/:transactionId/status', (req, res) => transactionController.updateTransactionStatus(req, res));
-router.get('/:transactionId/timeline', (req, res) => transactionController.getTransactionTimeline(req, res));
+router.get('/:email', (req, res, next) => transactionController.getTransactions(req, res, next));
+router.get('/:email/:transactionId', (req, res, next) => transactionController.getTransaction(req, res, next));
+router.put('/:transactionId/status', (req, res, next) => transactionController.updateTransactionStatus(req, res, next));
+router.get('/:transactionId/timeline', (req, res, next) => transactionController.getTransactionTimeline(req, res, next));
 
 // Payment routes
-router.post('/payment/direct', (req, res) => transactionController.makeDirectPayment(req, res));
+router.post('/payment/direct', (req, res, next) => transactionController.makeDirectPayment(req, res, next));
 
 export default router;

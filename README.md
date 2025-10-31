@@ -1,4 +1,4 @@
-# Linka — Discover, Chat, and Pay
+# Linka - Decentralized Escrow Platform — Discover, Chat, and Pay
 
 **Linka** is a conversational marketplace, providing seamless in-conversation experiences across WhatsApp (WaSender), Web, and Farcaster. Users can discover vendors, manage wallets, and make onchain payments through natural conversation.
 

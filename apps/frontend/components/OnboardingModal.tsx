@@ -2,14 +2,8 @@
 
 import { useState } from 'react'
 import { CheckCircle, ArrowRight, User, Mail, Lock, Shield, Wallet } from 'lucide-react'
-
-interface OnboardingModalProps {
-  onComplete: (userData: any) => void
-  onSignIn: (email: string) => void
-  isNewUser?: boolean
-}
-
-type OnboardingStep = 'welcome' | 'consent' | 'identity' | 'google' | 'wallet' | 'complete'
+import { createIdentity, signIn } from '../libs/backend'
+import type { OnboardingModalProps, OnboardingStep } from '../libs/types'
 
 export default function OnboardingModal({ onComplete, onSignIn, isNewUser = true }: OnboardingModalProps) {
   const [step, setStep] = useState<OnboardingStep>(isNewUser ? 'welcome' : 'identity')
@@ -97,36 +91,22 @@ export default function OnboardingModal({ onComplete, onSignIn, isNewUser = true
     setError('')
 
     try {
-      // Create user account
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'
-      const response = await fetch(`${backendUrl}/api/identity/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const data = await createIdentity({
+        email: formData.email,
+        profile: {
+          name: formData.name,
         },
-        body: JSON.stringify({
-          email: formData.email,
-          username: formData.username,
-          password: formData.password,
-          profile: {
-            name: formData.name,
-            isVendor: false
-          },
-          consentGiven: formData.consentGiven,
-          googleId: formData.googleId || undefined
-        }),
+        consentGiven: formData.consentGiven,
       })
-
-      const data = await response.json()
 
       if (!data.success) {
         throw new Error(data.error || 'Failed to create account')
       }
 
-      // Store user session
       localStorage.setItem('linka_user', JSON.stringify({
         email: formData.email,
         name: formData.name,
+        username: formData.username,
         walletAddress: data.data.walletAddress,
         onboardingCompleted: true
       }))
@@ -155,25 +135,14 @@ export default function OnboardingModal({ onComplete, onSignIn, isNewUser = true
     setError('')
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'
-      const response = await fetch(`${backendUrl}/api/identity/signin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        })
+      const data = await signIn({
+        email: formData.email,
       })
-      
-      const data = await response.json()
 
       if (!data.success) {
         throw new Error(data.error || 'Invalid credentials')
       }
 
-      // Store user session
       localStorage.setItem('linka_user', JSON.stringify({
         email: data.data.email,
         username: data.data.username,

@@ -2,16 +2,7 @@
 
 import { useState } from 'react'
 import { Wallet, CreditCard, ArrowRight, CheckCircle, Copy } from 'lucide-react'
-
-interface WalletFundProps {
-  onClose: () => void
-  walletAddress?: string
-  networkInfo?: {
-    name: string
-    chainId: number
-  }
-  onBalanceRefresh?: () => void
-}
+import type { WalletFundProps } from '../libs/types'
 
 export default function WalletFund({ onClose, walletAddress, networkInfo, onBalanceRefresh }: WalletFundProps) {
   const [step, setStep] = useState<'method' | 'amount' | 'wallet' | 'processing' | 'success'>('method')
